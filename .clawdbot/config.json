@@ -43,14 +43,14 @@
     "heartbeat": "github-copilot/claude-haiku-4-5",
     "subagents": "github-copilot/claude-sonnet-4-6",
     "profiles": {
-      "backend-complex": "openai/gpt-5-codex",
+      "backend-complex": "gpt-5.3-codex",
       "backend-fast": "github-copilot/claude-sonnet-4-6",
       "frontend-ui": "github-copilot/claude-sonnet-4-6",
       "analysis": "github-copilot/claude-opus-4.6",
       "heartbeat": "github-copilot/claude-haiku-4-5"
     },
     "agentDefaults": {
-      "codex": "openai/gpt-5-codex",
+      "codex": "gpt-5.3-codex",
       "claude": "github-copilot/claude-sonnet-4-6",
       "openclaw": "github-copilot/claude-sonnet-4-6"
     }

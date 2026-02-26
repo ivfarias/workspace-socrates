@@ -61,8 +61,8 @@ fi
 case "$agent" in
   codex)
     # Do NOT pass --model to Codex — let ~/.codex/config.toml control the model.
-    # Passing an explicit model string (e.g. openai/gpt-5-codex) causes auth errors
-    # when using a ChatGPT account that doesn't support that model identifier.
+    # config.toml uses: model = "gpt-5.3-codex", model_reasoning_effort = "high"
+    # Passing an explicit model string causes auth/unsupported-model errors.
     exec codex \
       -c "model_reasoning_effort=$reasoning_effort" \
       --dangerously-bypass-approvals-and-sandbox \

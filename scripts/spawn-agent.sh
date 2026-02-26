@@ -90,7 +90,7 @@ resolve_model() {
   fi
 
   case "$agent" in
-    codex) echo "openai/gpt-5-codex" ;;
+    codex) echo "gpt-5.3-codex" ;;
     claude) echo "github-copilot/claude-sonnet-4-6" ;;
     *) echo "github-copilot/claude-sonnet-4-6" ;;
   esac
