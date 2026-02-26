@@ -15,7 +15,7 @@
     "tmuxSession": "ceo-kai-nanobot-openclaw-orchestration-refactor",
     "promptFile": "/Users/ivanfarias/Documents/Development/kyte/kai-v2/kai/tasks/prompts/2026-02-26-kai-nanobot-openclaw-orchestration-refactor.md",
     "startedAt": 1772130508717,
-    "updatedAt": 1772131800612,
+    "updatedAt": 1772132400991,
     "attempt": 1,
     "maxRetries": 3,
     "notifyOnComplete": true,
@@ -38,7 +38,7 @@
     },
     "lastFailure": {
       "reason": "agent_session_dead",
-      "at": 1772131800612
+      "at": 1772132400991
     }
   }
 ]

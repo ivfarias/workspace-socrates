@@ -13,6 +13,7 @@
         "imageModel": "openai/gpt-4o"
       },
       "heartbeat": {
+        "every": "5m",
         "model": "github-copilot/claude-haiku-4-5"
       }
     }
@@ -44,12 +45,12 @@
   "skills": {
     "develop-web-game": {
       "config": {
-        "model": "openai/gpt-5-codex"
+        "model": "gpt-5.3-codex"
       }
     },
     "subagent-driven-development": {
       "config": {
-        "model": "openai/gpt-5-codex"
+        "model": "gpt-5.3-codex"
       }
     }
   },
