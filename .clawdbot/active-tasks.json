@@ -1,0 +1,44 @@
+[
+  {
+    "id": "kai-nanobot-openclaw-orchestration-refactor",
+    "status": "needs_attention",
+    "agent": "codex",
+    "model": "openai/gpt-5-codex",
+    "taskType": "backend-complex",
+    "completionMode": "pr",
+    "specFile": "",
+    "description": "Refactor Kai orchestration to contract-compiled runtime with feature flags, ContextAssembler, ContractCompiler, HeartbeatOrchestrator, tenant safeguards, and hardened OpenAI run path",
+    "repo": "kai",
+    "repoPath": "/Users/ivanfarias/Documents/Development/kyte/kai-v2/kai",
+    "worktree": "/Users/ivanfarias/Documents/Development/kyte/kai-v2/kai/.worktrees/feat-kai-nanobot-openclaw-orchestration-refactor",
+    "branch": "feat/kai-nanobot-openclaw-orchestration-refactor",
+    "tmuxSession": "ceo-kai-nanobot-openclaw-orchestration-refactor",
+    "promptFile": "/Users/ivanfarias/Documents/Development/kyte/kai-v2/kai/tasks/prompts/2026-02-26-kai-nanobot-openclaw-orchestration-refactor.md",
+    "startedAt": 1772130508717,
+    "updatedAt": 1772131800612,
+    "attempt": 1,
+    "maxRetries": 3,
+    "notifyOnComplete": true,
+    "requiresScreenshot": false,
+    "heavy": false,
+    "sessionAlive": false,
+    "specEvaluation": null,
+    "checks": {
+      "prCreated": false,
+      "ciPassed": false,
+      "branchUpToDate": false,
+      "codexReviewPassed": false,
+      "claudeReviewPassed": false,
+      "geminiReviewPassed": false,
+      "screenshotIncluded": false
+    },
+    "runtime": {
+      "launchScript": "/Users/ivanfarias/.openclaw/workspace-ceo/.clawdbot/runtime/kai-nanobot-openclaw-orchestration-refactor.sh",
+      "logFile": "/Users/ivanfarias/.openclaw/workspace-ceo/.clawdbot/logs/kai-nanobot-openclaw-orchestration-refactor-20260226-152828.log"
+    },
+    "lastFailure": {
+      "reason": "agent_session_dead",
+      "at": 1772131800612
+    }
+  }
+]

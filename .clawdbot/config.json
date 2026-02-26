@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "worktrees": {
+    "root": ".worktrees",
+    "installDependencies": true,
+    "installCommand": "pnpm install --prefer-offline"
+  },
+  "limits": {
+    "maxConcurrentAgents": 3,
+    "maxConcurrentHeavyAgents": 1,
+    "heavyTaskTypes": [
+      "frontend-ui",
+      "integration",
+      "e2e",
+      "build-heavy"
+    ]
+  },
+  "retryPolicy": {
+    "maxAttempts": 3,
+    "cooldownSeconds": 90,
+    "autoRespawnOnSessionExit": true,
+    "autoRespawnOnCiFailure": true,
+    "autoRespawnOnCriticalReview": true
+  },
+  "monitoring": {
+    "intervalSeconds": 600
+  },
+  "doneCriteria": {
+    "requiredChecks": [
+      "prCreated",
+      "ciPassed",
+      "branchUpToDate",
+      "codexReviewPassed",
+      "claudeReviewPassed",
+      "geminiReviewPassed"
+    ],
+    "noPrSpec": {
+      "requireSessionExit": true
+    }
+  },
+  "models": {
+    "default": "github-copilot/claude-sonnet-4-6",
+    "heartbeat": "github-copilot/claude-haiku-4-5",
+    "subagents": "github-copilot/claude-sonnet-4-6",
+    "profiles": {
+      "backend-complex": "openai/gpt-5-codex",
+      "backend-fast": "github-copilot/claude-sonnet-4-6",
+      "frontend-ui": "github-copilot/claude-sonnet-4-6",
+      "analysis": "github-copilot/claude-opus-4.6",
+      "heartbeat": "github-copilot/claude-haiku-4-5"
+    },
+    "agentDefaults": {
+      "codex": "openai/gpt-5-codex",
+      "claude": "github-copilot/claude-sonnet-4-6",
+      "openclaw": "github-copilot/claude-sonnet-4-6"
+    }
+  }
+}

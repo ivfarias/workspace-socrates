@@ -1,0 +1,66 @@
+{
+  "id": "ceo",
+  "commands": {
+    "text": true,
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "github-copilot/claude-sonnet-4-6",
+        "imageModel": "openai/gpt-4o"
+      },
+      "heartbeat": {
+        "model": "github-copilot/claude-haiku-4-5"
+      }
+    }
+  },
+  "messages": {
+    "tts": {
+      "summaryModel": "openai/gpt-4.1-mini"
+    }
+  },
+  "subagents": {
+    "defaults": {
+      "maxSpawnDepth": 2,
+      "runTimeoutSeconds": 1500,
+      "archiveAfterMinutes": 60
+    }
+  },
+  "tools": {
+    "allow": ["all"],
+    "deny": [],
+    "subagents": {
+      "model": "github-copilot/claude-sonnet-4-6",
+      "defaults": {
+        "maxSpawnDepth": 2,
+        "runTimeoutSeconds": 1500,
+        "archiveAfterMinutes": 60
+      }
+    }
+  },
+  "skills": {
+    "develop-web-game": {
+      "config": {
+        "model": "openai/gpt-5-codex"
+      }
+    },
+    "subagent-driven-development": {
+      "config": {
+        "model": "openai/gpt-5-codex"
+      }
+    }
+  },
+  "context": {
+    "gdrive": {
+      "enabled": true,
+      "config": {
+        "scope": "readonly",
+        "credentials": "/Users/ivanfarias/.openclaw/credentials/ivan-helper.json",
+        "remoteName": "gdrive"
+      }
+    }
+  }
+}

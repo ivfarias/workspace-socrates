@@ -1,0 +1,46 @@
+Warning: tmux not found. Session checks and auto-respawn are disabled.
+Agent check complete.
+Checked: 0
+Done: 0
+Retried: 0
+Needs attention: 0
+Agent check complete.
+Checked: 1
+Done: 0
+Retried: 1
+Needs attention: 0
+Agent check complete.
+Checked: 1
+Done: 0
+Retried: 1
+Needs attention: 0
+Agent check complete.
+Checked: 1
+Done: 0
+Retried: 0
+Needs attention: 1
+Agent check complete.
+Checked: 1
+Done: 0
+Retried: 0
+Needs attention: 0
+Agent check complete.
+Checked: 1
+Done: 0
+Retried: 1
+Needs attention: 0
+Agent check complete.
+Checked: 0
+Done: 0
+Retried: 0
+Needs attention: 0
+Agent check complete.
+Checked: 1
+Done: 1
+Retried: 0
+Needs attention: 0
+Agent check complete.
+Checked: 0
+Done: 0
+Retried: 0
+Needs attention: 0

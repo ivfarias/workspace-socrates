@@ -1,0 +1,19 @@
+{
+  "checks": [
+    {
+      "type": "file_exists",
+      "path": "dist/index.js"
+    },
+    {
+      "type": "file_contains",
+      "path": "README.md",
+      "pattern": "Generated on"
+    },
+    {
+      "type": "command",
+      "cwd": ".",
+      "command": "npm run test:smoke",
+      "expectExit": 0
+    }
+  ]
+}
