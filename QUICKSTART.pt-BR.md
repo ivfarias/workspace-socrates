@@ -5,17 +5,11 @@ Guia rapido para instalar e rodar o agente Socrates.
 ## 1) Clonar o workspace
 
 ```bash
-git clone <url-do-repo> ~/.openclaw/workspace-socrates
+git clone https://github.com/ivfarias/workspace-socrates.git ~/.openclaw/workspace-socrates
 cd ~/.openclaw/workspace-socrates
 ```
 
 ## 2) Instalar/registrar o agente
-
-```bash
-./scripts/install-socrates.sh --agent-id socrates
-```
-
-Alias tematico equivalente:
 
 ```bash
 ./scripts/awaken-socrates.sh --agent-id socrates
@@ -31,7 +25,7 @@ openclaw configure
 
 ```bash
 openclaw agents list --json | jq '.[] | select(.id=="socrates")'
-openclaw agent --agent socrates --message "Ola, Socrates"
+openclaw agent --agent socrates --message "Olá, Socrates"
 ```
 
 ## 5) Fluxo diario (resumo)
