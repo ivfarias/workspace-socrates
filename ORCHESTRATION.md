@@ -30,7 +30,7 @@ Default worktree root and dependency-install behavior are controlled by `.clawdb
 ```
 
 What happens automatically:
-- Starts a dedicated tmux session (`ceo-<task-id>`)
+- Starts a dedicated tmux session (`socrates-<task-id>`)
 - Stores runtime metadata in `.clawdbot/active-tasks.json`
 - Creates launch script in `.clawdbot/runtime/`
 - Captures terminal logs in `.clawdbot/logs/`
@@ -97,6 +97,46 @@ If you prefer the original skill name, use:
 /skill init-spec --repo /path/to/repo --name docs-sync
 ```
 
+## 2.7) Thematic Aliases (Optional)
+
+The orchestration layer supports Socratic naming aliases without changing core behavior.
+Plain commands remain canonical; aliases are wrappers.
+
+- Install/register Socrates:
+  - Plain: `./scripts/install-socrates.sh`
+  - Alias: `./scripts/awaken-socrates.sh`
+- Spawn one task:
+  - Plain: `./scripts/spawn-agent.sh`
+  - Alias: `./scripts/summon-interlocutor.sh`
+- Init + spawn in one step:
+  - Plain: `./scripts/bootstrap-task.sh`
+  - Alias: `./scripts/convene-council.sh`
+- Reviewer gate checks:
+  - Plain: `./scripts/verify-reviewers.sh`
+  - Alias: `./scripts/form-check.sh`
+- Brainstorming-first prompt/spec drafting:
+  - Plain: `/brainstorming_prompt_file`
+  - Alias: `/open_agora`
+- No-PR spec scaffold bootstrap:
+  - Plain: `./scripts/init-spec.sh`
+  - Alias: `./scripts/start-elenchus.sh`
+  - Alias: `./scripts/begin-inquiry.sh`
+- Deterministic registry decision gate:
+  - Plain: `./scripts/check-agents.sh --no-respawn`
+  - Alias: `./scripts/rule-of-reason.sh`
+- One-shot monitor status return:
+  - Plain: `./scripts/start-monitoring.sh --once`
+  - Alias: `./scripts/return-to-agora.sh`
+- PR reviewer triad gate:
+  - Plain: `./scripts/verify-reviewers.sh`
+  - Alias: `./scripts/dialectic-check.sh`
+
+Compatibility rule:
+- Any new theme alias should only delegate to a canonical script.
+- Automation and docs should reference both names side-by-side.
+- Slash equivalents exist for chat mode:
+  - `/start_elenchus`, `/begin_inquiry`, `/rule_of_reason`, `/return_to_agora`, `/dialectic_check`
+
 ## 3) Monitor Tasks
 
 One-off check (cron-friendly):
@@ -121,8 +161,8 @@ The monitor:
 Example crontab:
 
 ```bash
-*/10 * * * * cd /Users/ivanfarias/.openclaw/workspace-ceo && ./scripts/start-monitoring.sh --once >> .clawdbot/logs/cron-monitor.log 2>&1
-15 2 * * * cd /Users/ivanfarias/.openclaw/workspace-ceo && ./scripts/cleanup-orphans.sh --done-older-hours 24 --apply >> .clawdbot/logs/cron-cleanup.log 2>&1
+*/10 * * * * cd /path/to/workspace-socrates && ./scripts/start-monitoring.sh --once >> .clawdbot/logs/cron-monitor.log 2>&1
+15 2 * * * cd /path/to/workspace-socrates && ./scripts/cleanup-orphans.sh --done-older-hours 24 --apply >> .clawdbot/logs/cron-cleanup.log 2>&1
 ```
 
 ## 4) Done Criteria
@@ -196,16 +236,17 @@ Key fields include:
 - `checks.*` (PR/CI/review/screenshot signals)
 - `runtime.launchScript`, `runtime.logFile`
 
-## 7) OpenClaw Model Mapping
+## 7) Model Mapping
 
-`openclaw.json` is pre-wired for cost-aware defaults:
-- Primary: `github-copilot/claude-sonnet-4-6`
-- Heartbeat: `github-copilot/claude-haiku-4-5`
-- Sub-agents: `github-copilot/claude-sonnet-4-6`
-- Image model: `openai/gpt-4o`
-- TTS summaries: `openai/gpt-4.1-mini`
+Two layers are configured independently:
 
-Per-skill model overrides can be added under `skills.<name>.config.model`.
+- Socrates agent runtime (`openclaw.json`): can use `github-copilot/*` models.
+- Orchestration task routing (`.clawdbot/config.json`): routes direct Codex/Claude/Gemini models for spawned coding tasks.
+
+Current task routing defaults in `.clawdbot/config.json`:
+- `backend-complex` -> `gpt-5.3-codex`
+- `frontend-ui` -> `claude-sonnet-4.6`
+- `ux-design` -> `gemini-2.5-pro`
 
 ## 8) Reviewer Verification
 

@@ -4,7 +4,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  run-agent.sh --agent <codex|claude|openclaw|custom> --model <model> [options]
+  run-agent.sh --agent <codex|claude|gemini|openclaw|custom> --model <model> [options]
 
 Options:
   --description <text>       Task description (used as prompt when no prompt file is provided)
@@ -74,6 +74,11 @@ case "$agent" in
       --dangerously-skip-permissions \
       -p "$prompt"
     ;;
+  gemini)
+    exec gemini \
+      --model "$model" \
+      -p "$prompt"
+    ;;
   openclaw)
     exec openclaw \
       --label "$task_id" \
@@ -88,7 +93,7 @@ case "$agent" in
     exec bash -lc "$custom_command"
     ;;
   *)
-    echo "Unsupported agent '$agent'. Expected: codex, claude, openclaw, custom." >&2
+    echo "Unsupported agent '$agent'. Expected: codex, claude, gemini, openclaw, custom." >&2
     exit 1
     ;;
 esac

@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description: "Shortcut command for scripts/bootstrap-task.sh. Usage: /bootstrap --repo <path> --id <task-id> --branch <branch> --agent <codex|claude|openclaw|custom> --description \"...\" [options]"
+description: "Shortcut command for scripts/bootstrap-task.sh. Usage: /bootstrap --repo <path> --id <task-id> --branch <branch> --agent <codex|claude|gemini|openclaw|custom> --description \"...\" [options]"
 user-invocable: true
 metadata: { "openclaw": { "requires": { "bins": ["bash"] } } }
 ---
@@ -16,7 +16,7 @@ Run `scripts/bootstrap-task.sh` from the workspace root so worktree init + agent
 - Execute:
 
 ```bash
-cd /Users/ivanfarias/.openclaw/workspace-ceo
+cd <workspace-root>
 ./scripts/bootstrap-task.sh <raw args>
 ```
 

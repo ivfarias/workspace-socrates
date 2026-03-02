@@ -39,20 +39,22 @@
     }
   },
   "models": {
-    "default": "github-copilot/claude-sonnet-4-6",
-    "heartbeat": "github-copilot/claude-haiku-4-5",
-    "subagents": "github-copilot/claude-sonnet-4-6",
+    "default": "claude-sonnet-4.6",
+    "heartbeat": "claude-haiku-4.5",
+    "subagents": "claude-sonnet-4.6",
     "profiles": {
       "backend-complex": "gpt-5.3-codex",
-      "backend-fast": "github-copilot/claude-sonnet-4-6",
-      "frontend-ui": "github-copilot/claude-sonnet-4-6",
-      "analysis": "github-copilot/claude-opus-4.6",
-      "heartbeat": "github-copilot/claude-haiku-4-5"
+      "backend-fast": "claude-sonnet-4.6",
+      "frontend-ui": "claude-sonnet-4.6",
+      "ux-design": "gemini-2.5-pro",
+      "analysis": "claude-opus-4.6",
+      "heartbeat": "claude-haiku-4.5"
     },
     "agentDefaults": {
       "codex": "gpt-5.3-codex",
-      "claude": "github-copilot/claude-sonnet-4-6",
-      "openclaw": "github-copilot/claude-sonnet-4-6"
+      "claude": "claude-sonnet-4.6",
+      "gemini": "gemini-2.5-pro",
+      "openclaw": "claude-sonnet-4.6"
     }
   }
 }

@@ -13,7 +13,26 @@ Things like:
 - Device nicknames
 - Anything environment-specific
 
-## Examples
+## WhatsApp
+
+- Add your own alert target(s) here after onboarding.
+- Do not commit personal phone numbers or account ids.
+
+## Web Search (DuckDuckGo, No API Key)
+
+- Socrates uses DuckDuckGo search via `uvx` + `duckduckgo-search` (no Brave key required).
+- Run directly:
+  - `./scripts/ddg-search.sh --query "your topic" --max-results 5`
+- Run via slash skill:
+  - `/ddg_search --query "your topic" --max-results 5`
+- One-time dependency check:
+  - `uvx --from duckduckgo-search ddgs --help`
+
+### Runtime Config Note
+
+- The installer sets Brave web search off and keeps web fetch on in `~/.openclaw/openclaw.json`:
+  - `tools.web.search.enabled=false`
+  - `tools.web.fetch.enabled=true`
 
 ```markdown
 ### Cameras

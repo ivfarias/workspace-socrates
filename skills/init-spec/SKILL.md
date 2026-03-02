@@ -16,7 +16,7 @@ Run `scripts/init-spec.sh` from the workspace root to generate no-PR spec files 
 - Execute:
 
 ```bash
-cd /Users/ivanfarias/.openclaw/workspace-ceo
+cd <workspace-root>
 ./scripts/init-spec.sh <raw args>
 ```
 

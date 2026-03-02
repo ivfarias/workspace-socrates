@@ -12,7 +12,7 @@ RUNNER="$SCRIPT_DIR/run-agent.sh"
 usage() {
   cat <<'EOF'
 Usage:
-  spawn-agent.sh --id <task-id> --agent <codex|claude|openclaw|custom> --description <text> --worktree <path> [options]
+  spawn-agent.sh --id <task-id> --agent <codex|claude|gemini|openclaw|custom> --description <text> --worktree <path> [options]
 
 Options:
   --task-type <type>              Task profile key for model routing
@@ -21,7 +21,7 @@ Options:
   --model <model>                 Explicit model override
   --branch <branch>               Branch name (auto-detected from worktree if omitted)
   --repo-path <path>              Absolute repo path (auto-detected from worktree if omitted)
-  --session <tmux-session>        Session name (default: ceo-<task-id>)
+  --session <tmux-session>        Session name (default: socrates-<task-id>)
   --prompt-file <path>            Prompt file to feed to the agent
   --max-retries <n>               Retry budget (default from config)
   --notify-on-complete <bool>     true|false (default: true)
@@ -85,14 +85,15 @@ resolve_model() {
       return
     fi
 
-    jq -r '.models.default // "github-copilot/claude-sonnet-4-6"' "$CONFIG_PATH"
+    jq -r '.models.default // "claude-sonnet-4.6"' "$CONFIG_PATH"
     return
   fi
 
   case "$agent" in
     codex) echo "gpt-5.3-codex" ;;
-    claude) echo "github-copilot/claude-sonnet-4-6" ;;
-    *) echo "github-copilot/claude-sonnet-4-6" ;;
+    claude) echo "claude-sonnet-4.6" ;;
+    gemini) echo "gemini-2.5-pro" ;;
+    *) echo "claude-sonnet-4.6" ;;
   esac
 }
 
@@ -228,7 +229,7 @@ fi
 model="$(resolve_model "$task_type" "$agent" "$model")"
 
 if [[ -z "$session_name" ]]; then
-  session_name="ceo-$(slugify "$task_id")"
+  session_name="socrates-$(slugify "$task_id")"
 fi
 
 if tmux has-session -t "$session_name" 2>/dev/null; then

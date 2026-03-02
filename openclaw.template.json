@@ -31,7 +31,9 @@
     }
   },
   "tools": {
-    "allow": ["all"],
+    "allow": [
+      "all"
+    ],
     "deny": [],
     "web": {
       "search": {

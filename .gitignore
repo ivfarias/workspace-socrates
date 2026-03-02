@@ -1,1 +1,15 @@
 .worktrees/
+.DS_Store
+
+.clawdbot/active-tasks.json
+.clawdbot/logs/
+.clawdbot/runtime/
+
+.openclaw/
+.trash/
+
+memory/*
+!memory/
+!memory/README.md
+
+tasks/prompts/

@@ -8,13 +8,13 @@ SPAWN_SCRIPT="$SCRIPT_DIR/spawn-agent.sh"
 usage() {
   cat <<'EOF'
 Usage:
-  bootstrap-task.sh --repo <repo-path> --id <task-id> --branch <branch> --agent <codex|claude|openclaw|custom> --description <text> [options]
+  bootstrap-task.sh --repo <repo-path> --id <task-id> --branch <branch> --agent <codex|claude|gemini|openclaw|custom> --description <text> [options]
 
 Core options:
   --repo <path>                  Repository root path
   --id <task-id>                 Unique task id for registry/session naming
   --branch <branch>              Branch to create/use for worktree
-  --agent <agent>                codex | claude | openclaw | custom
+  --agent <agent>                codex | claude | gemini | openclaw | custom
   --description <text>           Task description
 
 Worktree options:
