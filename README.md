@@ -1,72 +1,115 @@
 # Socrates Workspace
 
-Shareable OpenClaw workspace for a Socrates-style orchestration agent.
+Socrates is a shareable OpenClaw workspace that runs a deterministic, multi-agent orchestration loop for software delivery.
+Instead of ad-hoc prompt sessions, it gives you a repeatable control plane for spawning agent tasks, tracking progress, enforcing done gates, and monitoring retries.
 
-It includes:
-- agent orchestration scripts (`scripts/`)
-- task registry + monitor flow (`.clawdbot/`)
-- slash-invocable skills (`/bootstrap`, `/init_spec`, `/install_agent`, `/ddg_search`)
-- thematic aliases (for a philosophy-themed UX)
+## What it does
 
-## Quick Start
+* Initializes isolated git worktrees per task/branch.
+* Spawns coding agents in dedicated tmux sessions according to their strengths (codex for backend, gemini for ui/ux and claude for frontend).
+* Tracks runtime state in .clawdbot/active-tasks.json.
+* Monitors each task for session health, PR status, CI status, branch freshness, and reviewer gates.
+* Marks tasks done only when configured completion criteria pass.
+* Auto-respawns/nudges failed tasks within retry limits.
+* Supports both PR-driven delivery and no-PR spec-driven execution.
+
+## How It Works
+
+* `scripts/init-worktree.sh` creates an isolated worktree and optionally installs dependencies.
+* `scripts/spawn-agent.sh` launches the selected agent (`codex`, `claude`, `gemini`, `openclaw`, or `custom`) and registers task metadata.
+* `scripts/start-monitoring.sh` runs one-shot or looped checks via `scripts/check-agents.sh`.
+* `scripts/check-agents.sh` evaluates completion gates and retry policy, then updates task state in-place.
+* `scripts/bootstrap-task.sh` chains worktree init + agent spawn into a single command.
+
+## Key Features
+
+* Deterministic orchestration with shell scripts + JSON registry.
+* Multi-agent model routing by task type (`backend-complex`, `frontend-ui`, `ux-design`, etc.).
+* Concurrency controls:
+  * total concurrent agents
+  * separate cap for heavy task types
+* Retry controls:
+  * max attempts
+  * auto-respawn on session exit / CI failure / critical review failures
+* PR completion gates:
+  * PR created
+  * CI passed
+  * branch up-to-date
+  * Codex/Claude/Gemini review signals
+  * optional screenshot requirement
+* No-PR completion gates via spec file checks:
+  * `file_exists`
+  * `file_contains` (regex)
+  * `command` exit-code validation
+* Full observability:
+  * runtime launch scripts in `.clawdbot/runtime/`
+  * per-task logs in `.clawdbot/logs/`
+  * machine-readable task state in `.clawdbot/active-tasks.json`
+* Idempotent installer (`install-socrates.sh`) that registers the workspace agent, applies identity/avatar, and preserves existing model defaults unless explicitly overridden.
+
+## Requirements
+
+* `openclaw` CLI
+* `git`
+* `jq`
+* `tmux`
+* `gh` (recommended for PR/CI/reviewer checks)
+* Optional, depending on agent choice:
+  * `codex` CLI
+  * `claude` CLI
+  * `gemini` CLI
+
+## Easiest Way To Get Started
 
 ```bash
-git clone <repo-url> ~/.openclaw/workspace-socrates
+git clone https://github.com/ivfarias/workspace-socrates.git ~/.openclaw/workspace-socrates
 cd ~/.openclaw/workspace-socrates
 ./scripts/install-socrates.sh --agent-id socrates
 openclaw configure
 openclaw agent --agent socrates --message "Hello Socrates"
 ```
 
+## First Real Task (One Command)
+
+* To create a task you'll need two things: 1) Your repository URL and 2) A general idea of what needs to be built.
+* Run /open_agora and tell Socrates what to build.
+* If the task isn't clear enough yet, it'll ask you a few questions in order to create the initial task prompt.
+* After that, it'll run things on its own.
+
+```bash
+./scripts/bootstrap-task.sh \
+  --repo /path/to/repo \
+  --id feat-example \
+  --branch feat/example \
+  --agent codex \
+  --task-type backend-complex \
+  --description "Implement feature X" \
+  --prompt-file /path/to/prompt.md
+```
+
+Then monitor:
+
+```bash
+./scripts/start-monitoring.sh --once
+```
+
 Detailed setup guide: [SETUP.md](SETUP.md)
 Guia rapido em Portugues (PT-BR): [QUICKSTART.pt-BR.md](QUICKSTART.pt-BR.md)
 
-## Plain vs Thematic Commands
+## Thematic Commands
 
-Canonical scripts stay plain-English for reliability. Thematic names are compatibility aliases.
-
-- Install/register agent:
-  - Plain: `./scripts/install-socrates.sh`
-  - Thematic: `./scripts/awaken-socrates.sh`
-- Spawn one task:
-  - Plain: `./scripts/spawn-agent.sh`
-  - Thematic: `./scripts/summon-interlocutor.sh`
-- Init + spawn in one step:
-  - Plain: `./scripts/bootstrap-task.sh`
-  - Thematic: `./scripts/convene-council.sh`
-- Reviewer gate verification:
-  - Plain: `./scripts/verify-reviewers.sh`
-  - Thematic: `./scripts/form-check.sh`
-- Brainstorming-first flow:
-  - Plain: `/brainstorming_prompt_file`
-  - Thematic: `/open_agora`
-
+- Install/register agent: `./scripts/awaken-socrates.sh`
+- Spawn one task: `./scripts/summon-interlocutor.sh`
+- Init + spawn in one step: `./scripts/convene-council.sh`
+- Reviewer gate verification: `./scripts/form-check.sh`
+- Brainstorming-first flow: `/open_agora`
+- 
 Additional thematic aliases:
-- Inquiry/spec bootstrap:
-  - Plain: `./scripts/init-spec.sh`
-  - Thematic: `./scripts/start-elenchus.sh`
-  - Thematic: `./scripts/begin-inquiry.sh`
-- Deterministic decision gate:
-  - Plain: `./scripts/check-agents.sh --no-respawn`
-  - Thematic: `./scripts/rule-of-reason.sh`
-- One-shot monitor + return status:
-  - Plain: `./scripts/start-monitoring.sh --once`
-  - Thematic: `./scripts/return-to-agora.sh`
-- PR reviewer triad check:
-  - Plain: `./scripts/verify-reviewers.sh`
-  - Thematic: `./scripts/dialectic-check.sh`
+- Inquiry/spec bootstrap: `./scripts/begin-inquiry.sh`
+- Deterministic decision gate: `./scripts/rule-of-reason.sh`
+- One-shot monitor + return status: `./scripts/return-to-agora.sh`
+- PR reviewer triad check: `./scripts/dialectic-check.sh` / `./scripts/verify-reviewers.sh`
 
-Matching slash aliases are available:
-- `/start_elenchus`, `/begin_inquiry`, `/rule_of_reason`, `/return_to_agora`, `/dialectic_check`
-
-## Safe Naming Pattern
-
-If you add your own aliases, use this pattern:
-
-- Keep one stable canonical command (`scripts/<plain-name>.sh`).
-- Add optional themed wrappers that only delegate (`exec ./scripts/<plain-name>.sh "$@"`).
-- Keep slash names short, lowercase, and OpenClaw-safe (`a-z0-9_`).
-- Always document both names side-by-side so new users are not blocked by theme vocabulary.
 
 ## Model Behavior
 
