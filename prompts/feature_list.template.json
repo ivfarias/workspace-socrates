@@ -1,0 +1,28 @@
+{
+  "_comment": "feature_list.json — ground truth for project completeness. DO NOT remove or modify feature entries. Only update 'passes' to true after end-to-end verification.",
+  "features": [
+    {
+      "id": "feature-001",
+      "category": "functional",
+      "description": "Short description of the user-visible behavior this feature delivers",
+      "steps": [
+        "Navigate to [entry point]",
+        "Perform [action]",
+        "Verify [observable outcome]",
+        "Check [secondary observable outcome]"
+      ],
+      "passes": false
+    },
+    {
+      "id": "feature-002",
+      "category": "functional",
+      "description": "Second feature description",
+      "steps": [
+        "Step 1",
+        "Step 2",
+        "Step 3"
+      ],
+      "passes": false
+    }
+  ]
+}

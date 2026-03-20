@@ -10,10 +10,12 @@ Options:
   --path <spec-path>     Explicit output path (defaults to <repo>/.clawdbot/specs/<name>.json)
   --overwrite            Overwrite existing file
   --preset <preset>      basic | build-artifact (default: basic)
+  --with-feature-list    Also create a feature_list.json scaffold at <repo>/feature_list.json
 
 Examples:
   ./scripts/init-spec.sh --repo /path/to/repo --name docs-sync
   ./scripts/init-spec.sh --repo /path/to/repo --name web-build --preset build-artifact
+  ./scripts/init-spec.sh --repo /path/to/repo --name my-feature --with-feature-list
 EOF
 }
 
@@ -22,6 +24,7 @@ name=""
 path_override=""
 overwrite="false"
 preset="basic"
+with_feature_list="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -30,6 +33,7 @@ while [[ $# -gt 0 ]]; do
     --path) path_override="$2"; shift 2 ;;
     --overwrite) overwrite="true"; shift ;;
     --preset) preset="$2"; shift 2 ;;
+    --with-feature-list) with_feature_list="true"; shift ;;
     -h|--help)
       usage
       exit 0
@@ -120,3 +124,34 @@ EOF
 esac
 
 echo "Created spec: $out_path"
+
+# ── Item 2: Optionally generate feature_list.json ──
+if [[ "$with_feature_list" == "true" ]]; then
+  feature_list_path="$repo/feature_list.json"
+  if [[ -f "$feature_list_path" && "$overwrite" != "true" ]]; then
+    echo "feature_list.json already exists at $feature_list_path (use --overwrite to replace)" >&2
+  else
+    template="$SCRIPT_DIR/../prompts/feature_list.template.json"
+    if [[ -f "$template" ]]; then
+      cp "$template" "$feature_list_path"
+    else
+      cat > "$feature_list_path" << FLEOF
+{
+  "_comment": "ground truth for project completeness. DO NOT remove features. Only set passes=true after end-to-end verification.",
+  "features": [
+    {
+      "id": "feature-001",
+      "category": "functional",
+      "description": "TODO: describe the user-visible behavior",
+      "steps": [
+        "TODO: step-by-step verification instructions"
+      ],
+      "passes": false
+    }
+  ]
+}
+FLEOF
+    fi
+    echo "Created feature_list.json: $feature_list_path"
+  fi
+fi

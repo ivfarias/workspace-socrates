@@ -121,6 +121,7 @@ custom_command=""
 notify_on_complete="true"
 requires_screenshot="false"
 max_retries=""
+phase="coding"
 
 if [[ $# -ge 4 && "$1" != --* ]]; then
   agent="$1"
@@ -148,6 +149,7 @@ else
       --max-retries) max_retries="$2"; shift 2 ;;
       --notify-on-complete) notify_on_complete="$2"; shift 2 ;;
       --requires-screenshot) requires_screenshot="$2"; shift 2 ;;
+      --phase) phase="$2"; shift 2 ;;
       -h|--help)
         usage
         exit 0
@@ -264,6 +266,35 @@ if [[ "$is_heavy" == "true" ]]; then
   fi
 fi
 
+# ── Item 1: Seed .agent-progress.md in the worktree if not already present ──
+progress_file="$worktree/.agent-progress.md"
+if [[ ! -f "$progress_file" ]]; then
+  today="$(date +%Y-%m-%d)"
+  cat > "$progress_file" << PROGRESSEOF
+# Agent Progress Log
+
+## Session: ${today} — Task: ${task_id}
+
+**Phase:** ${phase}
+**Status:** Not started — session not yet begun
+
+## What Was Done
+
+_No sessions run yet._
+
+## What Remains
+
+${description}
+
+## Notes for Next Agent
+
+- Read feature_list.json for the authoritative list of deliverables
+- Run init.sh (if it exists) to start the dev environment
+- Follow the startup sequence in STARTUP.md before writing any code
+PROGRESSEOF
+  echo "Created .agent-progress.md in $worktree"
+fi
+
 launch_script="$RUNTIME_DIR/${task_id}.sh"
 timestamp="$(date +%Y%m%d-%H%M%S)"
 log_file="$LOG_DIR/${task_id}-${timestamp}.log"
@@ -306,6 +337,8 @@ task_json="$(jq -n \
   --arg branch "$branch" \
   --arg tmuxSession "$session_name" \
   --arg promptFile "$prompt_file" \
+  --arg progressFile "$progress_file" \
+  --arg phase "$phase" \
   --arg launchScript "$launch_script" \
   --arg logFile "$log_file" \
   --argjson startedAt "$created_at" \
@@ -330,6 +363,8 @@ task_json="$(jq -n \
     branch: $branch,
     tmuxSession: $tmuxSession,
     promptFile: $promptFile,
+    progressFile: $progressFile,
+    phase: $phase,
     startedAt: $startedAt,
     updatedAt: $updatedAt,
     attempt: $attempt,

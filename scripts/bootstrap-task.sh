@@ -16,6 +16,9 @@ Core options:
   --branch <branch>              Branch to create/use for worktree
   --agent <agent>                codex | claude | gemini | openclaw | custom
   --description <text>           Task description
+  --phase <phase>                initializer | coding (default: coding)
+                                 'initializer' uses prompts/initializer-agent.md template;
+                                 'coding' uses prompts/coding-agent.md template.
 
 Worktree options:
   --base <ref>                   Base branch/ref (default: origin/main)
@@ -65,6 +68,7 @@ notify_on_complete=""
 requires_screenshot=""
 custom_command=""
 install_flag=""
+phase="coding"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -87,6 +91,7 @@ while [[ $# -gt 0 ]]; do
     --notify-on-complete) notify_on_complete="$2"; shift 2 ;;
     --requires-screenshot) requires_screenshot="$2"; shift 2 ;;
     --command) custom_command="$2"; shift 2 ;;
+    --phase) phase="$2"; shift 2 ;;
     -h|--help)
       usage
       exit 0
@@ -126,6 +131,26 @@ if [[ -z "$worktree_path" || ! -d "$worktree_path" ]]; then
   exit 1
 fi
 
+# ── Item 6: Auto-select prompt template based on --phase if no explicit --prompt-file ──
+if [[ -z "$prompt_file" ]]; then
+  case "$phase" in
+    initializer)
+      candidate="$SCRIPT_DIR/../prompts/initializer-agent.md"
+      if [[ -f "$candidate" ]]; then
+        prompt_file="$(cd "$(dirname "$candidate")" && pwd)/$(basename "$candidate")"
+        echo "Phase 'initializer': using prompt template $prompt_file"
+      fi
+      ;;
+    coding|*)
+      candidate="$SCRIPT_DIR/../prompts/coding-agent.md"
+      if [[ -f "$candidate" ]]; then
+        prompt_file="$(cd "$(dirname "$candidate")" && pwd)/$(basename "$candidate")"
+        echo "Phase 'coding': using prompt template $prompt_file"
+      fi
+      ;;
+  esac
+fi
+
 spawn_cmd=(
   "$SPAWN_SCRIPT"
   --id "$task_id"
@@ -160,6 +185,7 @@ fi
 if [[ -n "$custom_command" ]]; then
   spawn_cmd+=(--command "$custom_command")
 fi
+spawn_cmd+=(--phase "$phase")
 
 "${spawn_cmd[@]}"
 

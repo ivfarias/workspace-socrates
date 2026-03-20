@@ -1,0 +1,545 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 887a5a8..799d8c7 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -14,9 +14,88 @@ Before doing anything else:
+ 2. Read `USER.md` — this is who you're helping
+ 3. Read `memory/YYYY-MM-DD.md` (today + yesterday) for recent context
+ 4. **If in MAIN SESSION** (direct chat with your human): Also read `MEMORY.md`
++5. Read `ORCHESTRATION.md` — this is how you work
+ 
+ Don't ask permission. Just do it.
+ 
++## Work Requests — The Iron Law
++
++**You are the orchestrator, NOT the implementer.** Never write code, run tests, or edit files in target repositories yourself. You delegate ALL implementation work through your orchestration scripts and skills. No exceptions.
++
++### Decision Tree (follow this for EVERY user request)
++
++```
++User says "work on X" / "build X" / "implement X" / "let's do X":
++  1. Read ORCHESTRATION.md if you haven't this session
++  2. Announce: "I'm using [skill/script name] to handle this."
++  3. Use /open_agora (if task needs clarification/brainstorming first)
++     OR ./scripts/bootstrap-task.sh (if task is well-defined)
++  4. After spawning → set up task monitoring (see Active Task Monitoring below)
++  5. NEVER start coding the task yourself
++
++User says "resume" / "continue" / "where were we" / "start from where we left off":
++  1. Read memory/YYYY-MM-DD.md (today + yesterday)
++  2. Run: cat .clawdbot/active-tasks.json | jq '.[] | {id, status, description, phase}'
++  3. Run: ./scripts/start-monitoring.sh --once
++  4. Report to user: "Here's the current state: [tasks and statuses]."
++  5. Ask: "What would you like to focus on?"
++  6. Do NOT start working until the user confirms direction
++
++User asks a question ("what is X?" / "how does Y work?" / "explain Z"):
++  → Answer directly. No orchestration needed.
++
++User says "quickly fix X" / "just do this one thing" / "make this small change":
++  → Still delegate. Use bootstrap-task.sh with appropriate --task-type.
++  → Say: "Even for small fixes, I delegate through the orchestration pipeline 
++     to ensure proper tracking, review, and rollback capability."
++```
++
++### Required Skill Announcements
++
++Before executing any workflow, announce which skill or script you are using and why:
++- "I'm using the writing-plans skill to create the implementation plan."
++- "I'm using bootstrap-task.sh to spawn a coding agent for this."
++- "I'm using /open_agora to brainstorm and scope this task first."
++
++This makes your decision-making transparent and auditable.
++
++## Active Task Monitoring
++
++After spawning ANY agent task, you MUST set up cron-based monitoring:
++
++### On Spawn
++
++```bash
++openclaw cron add \
++  --name "task-watcher-<TASK_ID>" \
++  --at "3m" \
++  --session main \
++  --system-event "Active task check: run ./scripts/start-monitoring.sh --once in workspace-socrates, then report any status changes to the user. If a task reached 'done', trigger the review pipeline per ORCHESTRATION.md §9." \
++  --wake now
++```
++
++### On Each Cron Trigger
++
++1. Run `./scripts/start-monitoring.sh --once`
++2. Check `.clawdbot/active-tasks.json` for status changes
++3. If a task changed status → message the user with details
++4. If a task reached `done` → trigger the review pipeline (ORCHESTRATION.md §9)
++5. If tasks are still running → re-schedule the cron: `openclaw cron add --name "task-watcher-<TASK_ID>" --at "3m" ...`
++6. If NO tasks remain running → do NOT re-schedule (monitoring stops automatically)
++
++### Cleanup
++
++When all tasks are complete, verify no leftover watchers:
++```bash
++openclaw cron list | grep "task-watcher"
++# Remove any orphans:
++openclaw cron rm <job-id>
++```
++
++### The Promise Rule
++
++**If you tell the user "I'll get back to you when it's done," you MUST have a cron watcher running.** Saying you'll follow up and then not having monitoring in place is a broken promise. The cron watcher IS the follow-up mechanism.
++
+ ## Memory
+ 
+ You wake up fresh each session. These files are your continuity:
+diff --git a/HEARTBEAT.md b/HEARTBEAT.md
+index e130522..a41647d 100644
+--- a/HEARTBEAT.md
++++ b/HEARTBEAT.md
+@@ -1,20 +1,59 @@
+ # HEARTBEAT.md
+ 
+-## Orchestration Check
++## State-Aware Heartbeat Logic
+ 
+-Run these in this workspace:
++On every heartbeat, follow this decision tree:
+ 
+-1. `./scripts/start-monitoring.sh --once`
+-2. `./scripts/check-agents.sh`
+-3. If a task is stuck, inspect:
+-   `tmux capture-pane -t <session-name> -p | tail -20`
++### Step 1: Check for Active Tasks
+ 
+-## Alerting
++```bash
++ACTIVE=$(cat .clawdbot/active-tasks.json | jq '[.[] | select(.status=="running" or .status=="retrying")] | length')
++DONE=$(cat .clawdbot/active-tasks.json | jq '[.[] | select(.status=="done")] | length')
++```
+ 
+-- Use the operator's configured channel/account in their personal OpenClaw setup.
+-- Do not hardcode personal phone numbers, names, or private endpoints here.
++### Step 2: If Tasks Are Running (ACTIVE > 0)
+ 
+-## Quick Rules
++1. Run: `./scripts/start-monitoring.sh --once`
++2. If a task **changed status** (new `done`, `needs_attention`, or `retrying`) → message the user
++3. If a task reached **`done`** → trigger the review pipeline (see ORCHESTRATION.md §9):
++   - Spawn a `simplify` review session against the task's worktree
++   - Report results to user
++   - Ask if they want a deeper code review
++4. Verify cron watcher exists: `openclaw cron list | grep "task-watcher"`
++   - If no watcher exists → re-create it (it may have expired or been deleted):
++     ```bash
++     openclaw cron add --name "task-watcher-<id>" --at "3m" --session main \
++       --system-event "Active task check: run monitoring and report." --wake now
++     ```
++5. If tasks are still running and nothing changed → `HEARTBEAT_OK`
+ 
+-- Do a sanity check within 2-3 minutes after each agent spawn.
+-- If auth/model/tooling errors appear, escalate immediately (do not wait for next heartbeat).
++### Step 3: If Tasks Just Completed (ACTIVE == 0, DONE > 0 recently)
++
++1. Remove leftover task-watcher crons: `openclaw cron rm <job-id>`
++2. Report final status to user if not already reported
++3. Fall through to Step 4
++
++### Step 4: If No Tasks Running (ACTIVE == 0)
++
++Fall back to normal periodic checks (rotate through 2–4 per day):
++
++- **Emails** — urgent unread messages?
++- **Calendar** — upcoming events in next 24–48h?
++- **Mentions** — Twitter/social notifications?
++- **Weather** — relevant if your human might go out?
++
++If nothing needs attention → `HEARTBEAT_OK`
++
++## Alerting Rules
++
++- Use the operator's configured channel/account, not hardcoded endpoints.
++- Do a sanity check within 2–3 minutes after each agent spawn.
++- If auth/model/tooling errors appear, escalate immediately (don't wait for next heartbeat).
++
++## Quick Truth Table
++
++| Active Tasks? | Status Changed? | Action |
++|---|---|---|
++| Yes | Yes (done/attention/retry) | Message user, trigger review if done |
++| Yes | No | `HEARTBEAT_OK` (watcher is polling) |
++| No | N/A | Cleanup watchers, normal heartbeat checks |
+diff --git a/ORCHESTRATION.md b/ORCHESTRATION.md
+index 8a2cb7a..4a1d042 100644
+--- a/ORCHESTRATION.md
++++ b/ORCHESTRATION.md
+@@ -137,6 +137,70 @@ Compatibility rule:
+ - Slash equivalents exist for chat mode:
+   - `/start_elenchus`, `/begin_inquiry`, `/rule_of_reason`, `/return_to_agora`, `/dialectic_check`
+ 
++## 2.8) Harness Patterns (Agent Reliability)
++
++These conventions are applied automatically when using `bootstrap-task.sh`. They implement the
++*Agent-Computer Interface* (ACI) patterns from the harness engineering research.
++
++### Progress File (Item 1)
++
++Every spawned task automatically creates `.agent-progress.md` in the worktree if it doesn't exist.
++Agents must:
++- Read it at **session start** (before writing any code)
++- Update it at **session end** (before the final commit)
++
++The registry tracks it as `progressFile`.
++
++### JSON Feature List (Item 2)
++
++Use `init-spec.sh --with-feature-list` to generate both a completion spec and a `feature_list.json`
++at the repo root. See `prompts/feature_list.template.json` for the expected schema.
++
++Rules enforced in agent prompts:
++- Never remove or modify feature descriptions
++- Only set `passes: true` after end-to-end verification
++
++### Startup Sequence (Item 3)
++
++See `STARTUP.md` for the canonical 6-step startup sequence. It is embedded in `prompts/coding-agent.md`
++and `prompts/initializer-agent.md`.
++
++### Lint-on-Edit & Search Cap (Items 4–5)
++
++Enforced via prompt instructions in `prompts/coding-agent.md`:
++- Run linter on every modified file; revert on failure
++- Cap all search output at 50 lines; narrow query if truncated
++
++### Phase-Based Bootstrapping (Item 6)
++
++`bootstrap-task.sh` accepts `--phase initializer|coding`:
++
++```bash
++# Phase 1: scaffolding session (creates init.sh, feature_list.json, .agent-progress.md)
++./scripts/bootstrap-task.sh \
++  --repo /path/to/repo \
++  --id feat-init \
++  --branch feat/my-feature \
++  --agent claude \
++  --phase initializer \
++  --description "Build a user authentication system"
++
++# Phase 2+: coding sessions (pick next feature, implement, verify, commit)
++./scripts/bootstrap-task.sh \
++  --repo /path/to/repo \
++  --id feat-coding-001 \
++  --branch feat/my-feature \
++  --agent codex \
++  --phase coding \
++  --description "Implement user authentication"
++```
++
++When `--prompt-file` is omitted, `bootstrap-task.sh` auto-selects:
++- `prompts/initializer-agent.md` for `--phase initializer`
++- `prompts/coding-agent.md` for `--phase coding`
++
++You can always override with an explicit `--prompt-file`.
++
+ ## 3) Monitor Tasks
+ 
+ One-off check (cron-friendly):
+@@ -255,3 +319,80 @@ Current task routing defaults in `.clawdbot/config.json`:
+ ```
+ 
+ This validates whether Codex/Claude/Gemini reviewer signals are present on a PR.
++
++## 9) Post-Completion Review Pipeline
++
++When monitoring detects a task at `done` status, the following review pipeline triggers automatically:
++
++### Stage 1: Simplify Review (automatic)
++
++1. Spawn a new agent session in the completed task's worktree
++2. Run the `simplify` skill (3 parallel review agents: reuse, quality, efficiency)
++3. Wait for completion, apply fixes
++4. Report to user: "Task X done. Ran simplify review — N issues found and fixed."
++
++```bash
++# Example: spawn simplify review in the task's worktree
++./scripts/bootstrap-task.sh \
++  --repo <repo-path> \
++  --id <task-id>-simplify \
++  --branch <same-branch> \
++  --agent claude \
++  --task-type backend-fast \
++  --phase coding \
++  --description "Run simplify skill: review and fix code quality in the recent changes" \
++  --completion-mode no-pr-spec \
++  --spec-file <spec-path>
++```
++
++### Stage 2: Deep Code Review (user choice)
++
++After simplify completes, ask the user:
++
++> "Simplify review done. Would you like a deeper, more thorough code review?"
++
++- **If yes** → use `requesting-code-review` skill to dispatch a code-reviewer subagent, then process feedback following `receiving-code-review` skill
++- **If no** → proceed to `finishing-a-development-branch` skill
++
++### Stage 3: Branch Completion
++
++After all reviews are done, use the `finishing-a-development-branch` skill to present merge/PR options.
++
++## 10) Dynamic Task Monitoring via Cron
++
++Socrates uses OpenClaw's cron API to poll task status every 3 minutes while agents are working.
++
++### Create Watcher (after spawning a task)
++
++```bash
++openclaw cron add \
++  --name "task-watcher-<TASK_ID>" \
++  --at "3m" \
++  --session main \
++  --system-event "Active task check: run ./scripts/start-monitoring.sh --once in workspace-socrates, then report any status changes to the user. If a task reached 'done', trigger the review pipeline per §9." \
++  --wake now
++```
++
++### Re-schedule (on each cron trigger, if tasks still running)
++
++```bash
++# Same command — cron expired after firing, so re-create it
++openclaw cron add \
++  --name "task-watcher-<TASK_ID>" \
++  --at "3m" \
++  --session main \
++  --system-event "Active task check: run monitoring and report." \
++  --wake now
++```
++
++### Cleanup (when no tasks remain)
++
++```bash
++# List and remove all task-watcher crons
++openclaw cron list | grep "task-watcher"
++openclaw cron rm <job-id>
++```
++
++### Why Cron, Not Heartbeat?
++
++Heartbeat interval is a fixed config value (currently 5m). Cron allows on-demand 3-minute polling that self-terminates when no tasks remain — no wasted tokens during idle periods.
+diff --git a/SOUL.md b/SOUL.md
+index 7c3e6d0..38339af 100644
+--- a/SOUL.md
++++ b/SOUL.md
+@@ -35,6 +35,7 @@ Operate as Socrates, the philosopher-CEO:
+ - Prefer questions that reduce ambiguity: one sharp question beats five vague ones.
+ - Make tradeoffs explicit: speed vs quality, cost vs capability, simplicity vs flexibility.
+ - End in decisions: every analysis should produce a concrete next action.
++- **Always delegate execution:** You are the philosopher-CEO, not the craftsman. When work needs doing, summon the right interlocutor via your orchestration tools — never pick up the chisel yourself. Your scripts, skills, and spawned agents are your hands; your judgment and orchestration are your value.
+ 
+ ## Continuity
+ 
+diff --git a/scripts/bootstrap-task.sh b/scripts/bootstrap-task.sh
+index c6e6f87..310a242 100755
+--- a/scripts/bootstrap-task.sh
++++ b/scripts/bootstrap-task.sh
+@@ -16,6 +16,9 @@ Core options:
+   --branch <branch>              Branch to create/use for worktree
+   --agent <agent>                codex | claude | gemini | openclaw | custom
+   --description <text>           Task description
++  --phase <phase>                initializer | coding (default: coding)
++                                 'initializer' uses prompts/initializer-agent.md template;
++                                 'coding' uses prompts/coding-agent.md template.
+ 
+ Worktree options:
+   --base <ref>                   Base branch/ref (default: origin/main)
+@@ -65,6 +68,7 @@ notify_on_complete=""
+ requires_screenshot=""
+ custom_command=""
+ install_flag=""
++phase="coding"
+ 
+ while [[ $# -gt 0 ]]; do
+   case "$1" in
+@@ -87,6 +91,7 @@ while [[ $# -gt 0 ]]; do
+     --notify-on-complete) notify_on_complete="$2"; shift 2 ;;
+     --requires-screenshot) requires_screenshot="$2"; shift 2 ;;
+     --command) custom_command="$2"; shift 2 ;;
++    --phase) phase="$2"; shift 2 ;;
+     -h|--help)
+       usage
+       exit 0
+@@ -126,6 +131,26 @@ if [[ -z "$worktree_path" || ! -d "$worktree_path" ]]; then
+   exit 1
+ fi
+ 
++# ── Item 6: Auto-select prompt template based on --phase if no explicit --prompt-file ──
++if [[ -z "$prompt_file" ]]; then
++  case "$phase" in
++    initializer)
++      candidate="$SCRIPT_DIR/../prompts/initializer-agent.md"
++      if [[ -f "$candidate" ]]; then
++        prompt_file="$(cd "$(dirname "$candidate")" && pwd)/$(basename "$candidate")"
++        echo "Phase 'initializer': using prompt template $prompt_file"
++      fi
++      ;;
++    coding|*)
++      candidate="$SCRIPT_DIR/../prompts/coding-agent.md"
++      if [[ -f "$candidate" ]]; then
++        prompt_file="$(cd "$(dirname "$candidate")" && pwd)/$(basename "$candidate")"
++        echo "Phase 'coding': using prompt template $prompt_file"
++      fi
++      ;;
++  esac
++fi
++
+ spawn_cmd=(
+   "$SPAWN_SCRIPT"
+   --id "$task_id"
+@@ -160,6 +185,7 @@ fi
+ if [[ -n "$custom_command" ]]; then
+   spawn_cmd+=(--command "$custom_command")
+ fi
++spawn_cmd+=(--phase "$phase")
+ 
+ "${spawn_cmd[@]}"
+ 
+diff --git a/scripts/init-spec.sh b/scripts/init-spec.sh
+index dfdb6c7..2f6b1bf 100755
+--- a/scripts/init-spec.sh
++++ b/scripts/init-spec.sh
+@@ -10,10 +10,12 @@ Options:
+   --path <spec-path>     Explicit output path (defaults to <repo>/.clawdbot/specs/<name>.json)
+   --overwrite            Overwrite existing file
+   --preset <preset>      basic | build-artifact (default: basic)
++  --with-feature-list    Also create a feature_list.json scaffold at <repo>/feature_list.json
+ 
+ Examples:
+   ./scripts/init-spec.sh --repo /path/to/repo --name docs-sync
+   ./scripts/init-spec.sh --repo /path/to/repo --name web-build --preset build-artifact
++  ./scripts/init-spec.sh --repo /path/to/repo --name my-feature --with-feature-list
+ EOF
+ }
+ 
+@@ -22,6 +24,7 @@ name=""
+ path_override=""
+ overwrite="false"
+ preset="basic"
++with_feature_list="false"
+ 
+ while [[ $# -gt 0 ]]; do
+   case "$1" in
+@@ -30,6 +33,7 @@ while [[ $# -gt 0 ]]; do
+     --path) path_override="$2"; shift 2 ;;
+     --overwrite) overwrite="true"; shift ;;
+     --preset) preset="$2"; shift 2 ;;
++    --with-feature-list) with_feature_list="true"; shift ;;
+     -h|--help)
+       usage
+       exit 0
+@@ -120,3 +124,35 @@ EOF
+ esac
+ 
+ echo "Created spec: $out_path"
++
++# ── Item 2: Optionally generate feature_list.json ──
++if [[ "$with_feature_list" == "true" ]]; then
++  feature_list_path="$repo/feature_list.json"
++  if [[ -f "$feature_list_path" && "$overwrite" != "true" ]]; then
++    echo "feature_list.json already exists at $feature_list_path (use --overwrite to replace)" >&2
++  else
++    WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" && pwd)"
++    template="$WORKSPACE_DIR/prompts/feature_list.template.json"
++    if [[ -f "$template" ]]; then
++      cp "$template" "$feature_list_path"
++    else
++      cat > "$feature_list_path" << FLEOF
++{
++  "_comment": "ground truth for project completeness. DO NOT remove features. Only set passes=true after end-to-end verification.",
++  "features": [
++    {
++      "id": "feature-001",
++      "category": "functional",
++      "description": "TODO: describe the user-visible behavior",
++      "steps": [
++        "TODO: step-by-step verification instructions"
++      ],
++      "passes": false
++    }
++  ]
++}
++FLEOF
++    fi
++    echo "Created feature_list.json: $feature_list_path"
++  fi
++fi
+diff --git a/scripts/spawn-agent.sh b/scripts/spawn-agent.sh
+index 08e8db0..3b291de 100755
+--- a/scripts/spawn-agent.sh
++++ b/scripts/spawn-agent.sh
+@@ -121,6 +121,7 @@ custom_command=""
+ notify_on_complete="true"
+ requires_screenshot="false"
+ max_retries=""
++phase="coding"
+ 
+ if [[ $# -ge 4 && "$1" != --* ]]; then
+   agent="$1"
+@@ -148,6 +149,7 @@ else
+       --max-retries) max_retries="$2"; shift 2 ;;
+       --notify-on-complete) notify_on_complete="$2"; shift 2 ;;
+       --requires-screenshot) requires_screenshot="$2"; shift 2 ;;
++      --phase) phase="$2"; shift 2 ;;
+       -h|--help)
+         usage
+         exit 0
+@@ -264,6 +266,35 @@ if [[ "$is_heavy" == "true" ]]; then
+   fi
+ fi
+ 
++# ── Item 1: Seed .agent-progress.md in the worktree if not already present ──
++progress_file="$worktree/.agent-progress.md"
++if [[ ! -f "$progress_file" ]]; then
++  today="$(date +%Y-%m-%d)"
++  cat > "$progress_file" << PROGRESSEOF
++# Agent Progress Log
++
++## Session: ${today} — Task: ${task_id}
++
++**Phase:** ${phase}
++**Status:** Not started — session not yet begun
++
++## What Was Done
++
++_No sessions run yet._
++
++## What Remains
++
++${description}
++
++## Notes for Next Agent
++
++- Read feature_list.json for the authoritative list of deliverables
++- Run init.sh (if it exists) to start the dev environment
++- Follow the startup sequence in STARTUP.md before writing any code
++PROGRESSEOF
++  echo "Created .agent-progress.md in $worktree"
++fi
++
+ launch_script="$RUNTIME_DIR/${task_id}.sh"
+ timestamp="$(date +%Y%m%d-%H%M%S)"
+ log_file="$LOG_DIR/${task_id}-${timestamp}.log"
+@@ -306,6 +337,8 @@ task_json="$(jq -n \
+   --arg branch "$branch" \
+   --arg tmuxSession "$session_name" \
+   --arg promptFile "$prompt_file" \
++  --arg progressFile "$progress_file" \
++  --arg phase "$phase" \
+   --arg launchScript "$launch_script" \
+   --arg logFile "$log_file" \
+   --argjson startedAt "$created_at" \
+@@ -330,6 +363,8 @@ task_json="$(jq -n \
+     branch: $branch,
+     tmuxSession: $tmuxSession,
+     promptFile: $promptFile,
++    progressFile: $progressFile,
++    phase: $phase,
+     startedAt: $startedAt,
+     updatedAt: $updatedAt,
+     attempt: $attempt,

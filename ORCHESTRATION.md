@@ -137,6 +137,70 @@ Compatibility rule:
 - Slash equivalents exist for chat mode:
   - `/start_elenchus`, `/begin_inquiry`, `/rule_of_reason`, `/return_to_agora`, `/dialectic_check`
 
+## 2.8) Harness Patterns (Agent Reliability)
+
+These conventions are applied automatically when using `bootstrap-task.sh`. They implement the
+*Agent-Computer Interface* (ACI) patterns from the harness engineering research.
+
+### Progress File (Item 1)
+
+Every spawned task automatically creates `.agent-progress.md` in the worktree if it doesn't exist.
+Agents must:
+- Read it at **session start** (before writing any code)
+- Update it at **session end** (before the final commit)
+
+The registry tracks it as `progressFile`.
+
+### JSON Feature List (Item 2)
+
+Use `init-spec.sh --with-feature-list` to generate both a completion spec and a `feature_list.json`
+at the repo root. See `prompts/feature_list.template.json` for the expected schema.
+
+Rules enforced in agent prompts:
+- Never remove or modify feature descriptions
+- Only set `passes: true` after end-to-end verification
+
+### Startup Sequence (Item 3)
+
+See `STARTUP.md` for the canonical 6-step startup sequence. It is embedded in `prompts/coding-agent.md`
+and `prompts/initializer-agent.md`.
+
+### Lint-on-Edit & Search Cap (Items 4–5)
+
+Enforced via prompt instructions in `prompts/coding-agent.md`:
+- Run linter on every modified file; revert on failure
+- Cap all search output at 50 lines; narrow query if truncated
+
+### Phase-Based Bootstrapping (Item 6)
+
+`bootstrap-task.sh` accepts `--phase initializer|coding`:
+
+```bash
+# Phase 1: scaffolding session (creates init.sh, feature_list.json, .agent-progress.md)
+./scripts/bootstrap-task.sh \
+  --repo /path/to/repo \
+  --id feat-init \
+  --branch feat/my-feature \
+  --agent claude \
+  --phase initializer \
+  --description "Build a user authentication system"
+
+# Phase 2+: coding sessions (pick next feature, implement, verify, commit)
+./scripts/bootstrap-task.sh \
+  --repo /path/to/repo \
+  --id feat-coding-001 \
+  --branch feat/my-feature \
+  --agent codex \
+  --phase coding \
+  --description "Implement user authentication"
+```
+
+When `--prompt-file` is omitted, `bootstrap-task.sh` auto-selects:
+- `prompts/initializer-agent.md` for `--phase initializer`
+- `prompts/coding-agent.md` for `--phase coding`
+
+You can always override with an explicit `--prompt-file`.
+
 ## 3) Monitor Tasks
 
 One-off check (cron-friendly):
@@ -255,3 +319,80 @@ Current task routing defaults in `.clawdbot/config.json`:
 ```
 
 This validates whether Codex/Claude/Gemini reviewer signals are present on a PR.
+
+## 9) Post-Completion Review Pipeline
+
+When monitoring detects a task at `done` status, the following review pipeline triggers automatically:
+
+### Stage 1: Simplify Review (automatic)
+
+1. Spawn a new agent session in the completed task's worktree
+2. Run the `simplify` skill (3 parallel review agents: reuse, quality, efficiency)
+3. Wait for completion, apply fixes
+4. Report to user: "Task X done. Ran simplify review — N issues found and fixed."
+
+```bash
+# Example: spawn simplify review in the task's worktree
+./scripts/bootstrap-task.sh \
+  --repo <repo-path> \
+  --id <task-id>-simplify \
+  --branch <same-branch> \
+  --agent claude \
+  --task-type backend-fast \
+  --phase coding \
+  --description "Run simplify skill: review and fix code quality in the recent changes" \
+  --completion-mode no-pr-spec \
+  --spec-file <spec-path>
+```
+
+### Stage 2: Deep Code Review (user choice)
+
+After simplify completes, ask the user:
+
+> "Simplify review done. Would you like a deeper, more thorough code review?"
+
+- **If yes** → use `requesting-code-review` skill to dispatch a code-reviewer subagent, then process feedback following `receiving-code-review` skill
+- **If no** → proceed to `finishing-a-development-branch` skill
+
+### Stage 3: Branch Completion
+
+After all reviews are done, use the `finishing-a-development-branch` skill to present merge/PR options.
+
+## 10) Dynamic Task Monitoring via Cron
+
+Socrates uses OpenClaw's cron API to poll task status every 3 minutes while agents are working.
+
+### Create Watcher (after spawning a task)
+
+```bash
+openclaw cron add \
+  --name "task-watcher-<TASK_ID>" \
+  --at "3m" \
+  --session main \
+  --system-event "Active task check: run ./scripts/start-monitoring.sh --once in workspace-socrates, then report any status changes to the user. If a task reached 'done', trigger the review pipeline per §9." \
+  --wake now
+```
+
+### Re-schedule (on each cron trigger, if tasks still running)
+
+```bash
+# Same command — cron expired after firing, so re-create it
+openclaw cron add \
+  --name "task-watcher-<TASK_ID>" \
+  --at "3m" \
+  --session main \
+  --system-event "Active task check: run monitoring and report." \
+  --wake now
+```
+
+### Cleanup (when no tasks remain)
+
+```bash
+# List and remove all task-watcher crons
+openclaw cron list | grep "task-watcher"
+openclaw cron rm <job-id>
+```
+
+### Why Cron, Not Heartbeat?
+
+Heartbeat interval is a fixed config value (currently 5m). Cron allows on-demand 3-minute polling that self-terminates when no tasks remain — no wasted tokens during idle periods.
