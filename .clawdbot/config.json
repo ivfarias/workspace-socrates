@@ -43,7 +43,7 @@
     "heartbeat": "claude-haiku-4.5",
     "subagents": "claude-sonnet-4.6",
     "profiles": {
-      "backend-complex": "gpt-5.3-codex",
+      "backend-complex": "claude-sonnet-4.6",
       "backend-fast": "claude-sonnet-4.6",
       "frontend-ui": "claude-sonnet-4.6",
       "ux-design": "gemini-2.5-pro",
@@ -51,7 +51,7 @@
       "heartbeat": "claude-haiku-4.5"
     },
     "agentDefaults": {
-      "codex": "gpt-5.3-codex",
+      "codex": "claude-sonnet-4.6",
       "claude": "claude-sonnet-4.6",
       "gemini": "gemini-2.5-pro",
       "openclaw": "claude-sonnet-4.6"

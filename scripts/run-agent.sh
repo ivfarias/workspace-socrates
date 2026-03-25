@@ -71,8 +71,9 @@ case "$agent" in
   claude)
     exec claude \
       --model "$model" \
-      --dangerously-skip-permissions \
-      -p "$prompt"
+      --permission-mode bypassPermissions \
+      --print \
+      "$prompt"
     ;;
   gemini)
     exec gemini \
