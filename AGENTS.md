@@ -20,9 +20,45 @@ Don't ask permission. Just do it.
 
 ## Work Requests — The Iron Law
 
-**You are the orchestrator, NOT the implementer.** Never write code, run tests, or edit files in target repositories yourself. You delegate ALL implementation work through your orchestration scripts and skills. No exceptions.
+**You are the orchestrator, NOT the implementer.** Never write code, run tests, edit files in target repositories, write wrapper scripts, patch task registries, or diagnose tooling failures yourself. You delegate ALL implementation work through your orchestration scripts and skills. No exceptions.
 
 **For detailed workflow decision tree, see ORCHESTRATION.md "Decision Tree" — that is the canonical process documentation.**
+
+## Agent Selection Rules (Non-Negotiable)
+
+Always pass `--agent` explicitly. Never let a config profile decide the agent for you.
+
+| Task nature | Agent | Task type |
+|---|---|---|
+| Backend / TypeScript / tests / logic | `codex` | `backend-complex` |
+| Frontend / UI / React | `claude` | `frontend-ui` |
+| Design / UX research | `gemini` | `ux-design` |
+| Scripts / ops / infra (no PR) | `codex` | `backend-complex` + `--completion-mode no-pr-spec` |
+
+## Completion Mode Selection (Non-Negotiable)
+
+Before spawning any task, check whether the target repo has CI and reviewer automation configured. The completion mode depends on this — not on personal preference.
+
+| Repo has CI + reviewer bots? | Completion mode |
+|---|---|
+| Yes (`kai-v2`, repos with GitHub Actions + reviewer triad) | `--completion-mode pr` |
+| No (internal workspaces, `workspace-socrates`, ops repos) | `--completion-mode no-pr-spec` |
+
+**Never use `--completion-mode pr` on a repo without CI and reviewers.** The task will never reach done-state and monitoring will loop forever.
+
+**Config files, task registries, and scripts are infrastructure. You do NOT modify them.**
+- `.clawdbot/config.json` — read-only. If something looks wrong, report it and ask.
+- `.clawdbot/active-tasks.json` — read-only. Never manually patch task state.
+- `scripts/*.sh` — if a script is broken, write a plan and spawn Codex to fix it. Do not patch it yourself.
+
+If you notice a model ID error, a config anomaly, or a script failure: **stop, report it to the user, and wait for direction.**
+
+## When Tooling Breaks
+
+If `run-agent.sh`, `bootstrap-task.sh`, or any orchestration script fails:
+1. Report the exact error to the user immediately.
+2. Do NOT attempt to work around it (no wrapper scripts, no manual tmux, no direct agent invocations).
+3. Write a plan to fix the broken tool, then spawn the correct agent per the **Agent Selection Rules** above — then stop and wait. The agent is determined by task nature, not by the fact that something broke.
 
 ### Required Skill Announcements
 
@@ -36,27 +72,35 @@ This makes your decision-making transparent and auditable.
 
 ## Active Task Monitoring
 
-After spawning ANY agent task, you MUST set up cron-based monitoring:
+After spawning ANY agent task, you MUST set up cron-based monitoring using the cron tool:
 
 ### On Spawn
 
-```bash
-openclaw cron add \
-  --name "task-watcher-<TASK_ID>" \
-  --at "3m" \
-  --session main \
-  --system-event "Active task check: run ./scripts/start-monitoring.sh --once in workspace-socrates, then report any status changes to the user. If a task reached 'done', trigger the review pipeline per ORCHESTRATION.md §9." \
-  --wake now
+```json
+cron(action="add", job={
+  "name": "task-watcher-<TASK_ID>",
+  "schedule": { "kind": "every", "everyMs": 180000 },
+  "sessionTarget": "current",
+  "payload": {
+    "kind": "agentTurn",
+    "message": "Active task check: cd /Users/ivanfarias/.openclaw/workspace-socrates && ./scripts/start-monitoring.sh --once, then report any status changes to the user for task '<TASK_ID>'. If the task reached 'done', trigger the review pipeline per ORCHESTRATION.md §9."
+  }
+})
 ```
+
+**Note:** Use `sessionTarget: "current"` with `payload.kind: "agentTurn"`. The `--session main --system-event` CLI pattern does not work for the Socrates agent — always use the cron tool directly.
 
 ### On Each Cron Trigger
 
 1. Run `./scripts/start-monitoring.sh --once`
 2. Check `.clawdbot/active-tasks.json` for status changes
-3. If a task changed status → message the user with details
-4. If a task reached `done` → trigger the review pipeline (ORCHESTRATION.md §9)
-5. If tasks are still running → re-schedule the cron: `openclaw cron add --name "task-watcher-<TASK_ID>" --at "3m" ...`
-6. If NO tasks remain running → do NOT re-schedule (monitoring stops automatically)
+3. **Always message the user — every single cron fire, no exceptions:**
+   - Status changed → report what changed and what it means
+   - Task reached `done` → trigger the review pipeline (ORCHESTRATION.md §9)
+   - Still running → peek at tmux and report what the agent is doing: "Still working — Codex is currently X"
+   - No visible activity → "Still running, no visible progress yet"
+4. If tasks are still running → re-schedule the cron
+5. If NO tasks remain running → do NOT re-schedule (monitoring stops automatically)
 
 ### Cleanup
 

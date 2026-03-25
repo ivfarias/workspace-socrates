@@ -96,21 +96,26 @@ git commit -m "feat: add specific feature"
 
 ## Execution Handoff
 
-After saving the plan, offer execution choice:
+After saving the plan to `docs/plans/YYYY-MM-DD-<name>.md`, hand off to the agent swarm:
 
-**"Plan complete and saved to `docs/plans/<filename>.md`. Two execution options:**
+```bash
+./scripts/bootstrap-task.sh \
+  --repo <repo-path> \
+  --id <task-id> \
+  --branch <branch-name> \
+  --agent <agent> \
+  --task-type <type> \
+  --description "<short description>" \
+  --prompt-file <path-to-plan>
+```
 
-**1. Subagent-Driven (this session)** - I dispatch fresh subagent per task, review between tasks, fast iteration
+**Agent selection by task nature (non-negotiable):**
+- Backend / complex logic / TypeScript / tests → `--agent codex --task-type backend-complex`
+- Frontend / UI / React → `--agent claude --task-type frontend-ui`
+- Design / UX → `--agent gemini --task-type ux-design`
+- Ops / scripts / infra (no PR) → `--agent codex --completion-mode no-pr-spec`
 
-**2. Parallel Session (separate)** - Open new session with executing-plans, batch execution with checkpoints
+Then set up the cron watcher per AGENTS.md §Active Task Monitoring.
 
-**Which approach?"**
-
-**If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use ceo:subagent-driven-development
-- Stay in this session
-- Fresh subagent per task + code review
-
-**If Parallel Session chosen:**
-- Guide them to open new session in worktree
-- **REQUIRED SUB-SKILL:** New session uses ceo:executing-plans
+**Do NOT offer a "subagent-driven" option. Do NOT implement tasks yourself.**
+You write the plan. The agent executes it. Full stop.
