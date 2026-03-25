@@ -80,6 +80,9 @@ main() {
 
   # Check for completed simplify tasks and propagate results
   propagate_simplify_completion
+
+  # Check for tasks ready for Phase 9 Stage 2 (ralph-loop review)
+  spawn_ralph_loop_tasks
 }
 
 spawn_simplify_task() {
@@ -173,6 +176,100 @@ propagate_simplify_completion() {
     
     mv "$tmp_file" "$REGISTRY_PATH"
   done <<< "$completed_simplify"
+}
+
+spawn_ralph_loop_tasks() {
+  # Find tasks with phase9_status = "review_pending"
+  # Spawn ralph-loop-coordinator skill to orchestrate review cycles
+  
+  local pending_review=$(jq -r '.[] | select(.phase9_status == "review_pending") | .id' "$REGISTRY_PATH" 2>/dev/null || echo "")
+  
+  if [[ -z "$pending_review" ]]; then
+    return 0
+  fi
+
+  while IFS= read -r task_id; do
+    if [[ -z "$task_id" ]]; then
+      continue
+    fi
+
+    log_message "Phase 9 Stage 2: Spawning ralph-loop for task [$task_id]"
+    
+    # Get task details
+    local task_data=$(jq --arg id "$task_id" '.[] | select(.id == $id)' "$REGISTRY_PATH")
+    
+    if [[ -z "$task_data" ]]; then
+      log_message "ERROR: Task [$task_id] not found in registry"
+      continue
+    fi
+
+    local worktree=$(echo "$task_data" | jq -r '.worktree // ""')
+    local branch=$(echo "$task_data" | jq -r '.branch // ""')
+    local repo_path=$(echo "$task_data" | jq -r '.repoPath // ""')
+
+    if [[ -z "$worktree" || -z "$branch" || -z "$repo_path" ]]; then
+      log_message "ERROR: Missing worktree/branch/repo for task [$task_id]"
+      continue
+    fi
+
+    # Spawn ralph-loop task
+    local ralph_task_id="${task_id}-ralph"
+    
+    if spawn_ralph_loop_task "$repo_path" "$ralph_task_id" "$branch" "$worktree"; then
+      log_message "SUCCESS: Spawned ralph-loop task [$ralph_task_id]"
+      
+      # Update parent task: mark as review_in_progress
+      update_task_phase9_status "$task_id" "review_in_progress"
+    else
+      log_message "ERROR: Failed to spawn ralph-loop task for [$task_id]"
+      update_task_phase9_status "$task_id" "review_failed"
+    fi
+  done <<< "$pending_review"
+}
+
+spawn_ralph_loop_task() {
+  local repo_path="$1"
+  local ralph_task_id="$2"
+  local branch="$3"
+  local worktree="$4"
+
+  # Create completion spec for ralph-loop task
+  local spec_file="$worktree/.socrates/ralph-loop-completion.json"
+  mkdir -p "$worktree/.socrates"
+  
+  cat > "$spec_file" <<'EOF'
+{
+  "version": 1,
+  "completionMode": "no-pr-spec",
+  "doneCriteria": {
+    "requiredChecks": ["review_complete"]
+  },
+  "checks": [
+    {
+      "type": "file_contains",
+      "path": ".socrates/review-report.json",
+      "pattern": "\"review_signature\":",
+      "description": "Ralph-loop review cycle completed with explicit signature"
+    }
+  ]
+}
+EOF
+
+  # Spawn ralph-loop via bootstrap-task.sh
+  if "$SCRIPT_DIR/bootstrap-task.sh" \
+    --repo "$repo_path" \
+    --id "$ralph_task_id" \
+    --branch "$branch" \
+    --agent claude \
+    --phase coding \
+    --description "Phase 9 Stage 2: Run ralph-loop deterministic review cycle" \
+    --completion-mode no-pr-spec \
+    --spec-file ".socrates/ralph-loop-completion.json" \
+    >> "$PHASE9_LOG" 2>&1; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 main "$@"

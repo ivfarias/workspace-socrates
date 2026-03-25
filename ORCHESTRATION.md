@@ -382,17 +382,36 @@ When task reaches `done` status:
 }
 ```
 
-### Stage 2: Deterministic Code Review Loop (Upcoming: ralph-loop-coordinator)
+### Stage 2: Deterministic Code Review Loop (ralph-loop-coordinator)
 
 After simplify completes:
 
-1. Invoke `ralph-loop-coordinator` skill (TBD Phase 2)
-2. Loop:
-   - Request code review (via `requesting-code-review`)
-   - User implements feedback
-   - Re-request review (cycle += 1)
-   - Exit on: "ready" signal OR "no issues" OR cycle >= 5
-3. Update parent task: `review_status = "complete"`
+1. `check-agents.sh` detects done transition for `<task-id>-simplify`
+2. `trigger-phase9.sh` propagates to parent: `phase9_status = "review_pending"`
+3. `trigger-phase9.sh` detects parent with `review_pending` → spawns ralph-loop task
+   - Task ID: `<task-id>-ralph`
+   - Runs: `ralph-loop-coordinator` skill (orchestrates review cycles)
+   - Worktree: Same as parent task
+   - Branch: Same as parent task
+4. Ralph-loop cycles (max 5):
+   - Cycle 1-N: Request review → User implements → Re-request
+   - Exit condition: "ready" signal OR "no issues found" OR cycle >= 5
+5. When ralph-loop task reaches done:
+   - `trigger-phase9.sh` propagates: `review_completed = true`, `review_cycles = N`, `review_signature = "..."`
+   - Updates parent task: `phase9_status = "finishing_pending"`
+
+**See:** `skills/ralph-loop-coordinator/SKILL.md` for full review loop details.
+
+```bash
+# Ralph-loop spawning (automatic, no user action needed)
+trigger-phase9.sh sees: task.phase9_status = "review_pending"
+  ↓
+Spawns: <task-id>-ralph via bootstrap-task.sh
+  ↓
+Ralph orchestrates: request → implement → re-request
+  ↓
+On completion: propagates to parent, moves to Stage 3
+```
 
 ### Stage 3: Branch Completion
 
