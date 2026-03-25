@@ -209,7 +209,7 @@ Ready to implement auth feature
 ## Integration
 
 **Called by:**
-- **brainstorming** (Phase 4) - REQUIRED when design is approved and implementation follows
+- **open-agora** or **brainstorming-prompt-file** - REQUIRED when planning is approved and implementation follows
 - Any skill needing isolated workspace
 
 **Pairs with:**

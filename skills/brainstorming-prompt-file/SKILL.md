@@ -9,7 +9,7 @@ description: "Use this before spawning coding agents when you need to turn an id
 
 Turn a rough idea into a concrete prompt file that a coding agent can execute with minimal ambiguity.
 
-This skill is a variation of `brainstorming`, optimized for orchestration workflows where output must feed directly into:
+This skill is the prompt-file-oriented variant of the Socrates brainstorming flow, optimized for orchestration workflows where output must feed directly into:
 - `--prompt-file` for `bootstrap-task.sh` or `spawn-agent.sh`
 - `--completion-mode pr|no-pr-spec`
 - optional no-PR spec file checks
