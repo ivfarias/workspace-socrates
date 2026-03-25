@@ -34,9 +34,9 @@ openclaw agent --agent socrates --message "Olá, Socrates"
   - `/open_agora` (chat)
   - `./scripts/start-elenchus.sh --repo /path/to/repo --name feature-x` (script)
 - Criar worktree + spawn da task:
-  - `./scripts/convene-council.sh --repo /path/to/repo --id feat-x --branch feat/x --agent codex --description "Implementar X" --prompt-file /path/to/prompt.md`
+  - `./scripts/bootstrap-task.sh --repo /path/to/repo --id feat-x --branch feat/x --agent codex --description "Implementar X" --prompt-file /path/to/prompt.md`
 - Rodar monitoramento uma vez:
-  - `./scripts/return-to-agora.sh`
+  - `./scripts/start-monitoring.sh --once`
 
 ## Observacoes
 
