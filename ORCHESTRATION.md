@@ -319,43 +319,88 @@ Current task routing defaults in `.clawdbot/config.json`:
 
 This validates whether Codex/Claude/Gemini reviewer signals are present on a PR.
 
-## 9) Post-Completion Review Pipeline
+## 9) Post-Completion Review Pipeline (Automated)
 
-When monitoring detects a task at `done` status, the following review pipeline triggers automatically:
+When `check-agents.sh` detects a task has met all done criteria, Phase 9 automation triggers:
 
-### Stage 1: Simplify Review (automatic)
+### Architecture: Modular Orchestration
 
-1. Spawn a new agent session in the completed task's worktree
-2. Run the `simplify` skill (3 parallel review agents: reuse, quality, efficiency)
-3. Wait for completion, apply fixes
-4. Report to user: "Task X done. Ran simplify review — N issues found and fixed."
+Post-completion orchestration is separated into focused layers:
+- **check-agents.sh** - Detects done transitions, sets `phase9_status = "simplify_pending"`
+- **trigger-phase9.sh** - Orchestrates Phase 9 workflow (spawns simplify, tracks completion)
+- **start-monitoring.sh** - Calls trigger-phase9.sh after every check-agents run
 
-```bash
-# Example: spawn simplify review in the task's worktree
-./scripts/bootstrap-task.sh \
-  --repo <repo-path> \
-  --id <task-id>-simplify \
-  --branch <same-branch> \
-  --agent claude \
-  --task-type backend-fast \
-  --phase coding \
-  --description "Run simplify skill: review and fix code quality in the recent changes" \
-  --completion-mode no-pr-spec \
-  --spec-file <spec-path>
+This keeps each script focused and maintainable.
+
+### Active-Tasks Schema: Phase 9 Fields
+
+When a task is spawned, these fields track post-completion workflow:
+
+```json
+{
+  "id": "task-id",
+  "status": "done",
+  "phase9_status": "simplify_pending|simplify_running|review_pending|review_in_progress|review_completed|finishing_pending",
+  "simplify_completed": false,
+  "review_cycles": 0,
+  "review_status": "not_started|in_progress|complete",
+  "review_signature": ""
+}
 ```
 
-### Stage 2: Deep Code Review (user choice)
+**Field meanings:**
+- `phase9_status` - Current stage of post-completion pipeline
+- `simplify_completed` - Simplify pass finished (cleanup committed)
+- `review_cycles` - Count of review-implement cycles (0-5)
+- `review_status` - Explicit completion signal from review loop
+- `review_signature` - Agent's final message ("ready", "complete", etc.)
 
-After simplify completes, ask the user:
+### Stage 1: Automatic Simplify Review
 
-> "Simplify review done. Would you like a deeper, more thorough code review?"
+When task reaches `done` status:
 
-- **If yes** → use `requesting-code-review` skill to dispatch a code-reviewer subagent, then process feedback following `receiving-code-review` skill
-- **If no** → proceed to `finishing-a-development-branch` skill
+1. `check-agents.sh` detects transition → sets `phase9_status = "simplify_pending"`
+2. `trigger-phase9.sh` (called by `start-monitoring.sh`) → spawns simplify task
+   - Task ID: `<task-id>-simplify`
+   - Runs: `simplify` skill (3 parallel agents: reuse review, quality review, efficiency review)
+   - Worktree: Same as parent task
+   - Branch: Same as parent task
+3. Simplify runs 3 agents reviewing changed files
+4. Issues found and fixed → changes committed
+5. When simplify task reaches done:
+   - `trigger-phase9.sh` propagates: `simplify_completed = true`
+   - Updates parent task: `phase9_status = "review_pending"`
+
+```bash
+# Example simplify completion spec generated automatically:
+{
+  "completionMode": "no-pr-spec",
+  "checks": [
+    {"type": "file_contains", "path": ".socrates/simplify-report.json", "pattern": "session_complete"},
+    {"type": "command", "command": "npm test && echo ok"}
+  ]
+}
+```
+
+### Stage 2: Deterministic Code Review Loop (Upcoming: ralph-loop-coordinator)
+
+After simplify completes:
+
+1. Invoke `ralph-loop-coordinator` skill (TBD Phase 2)
+2. Loop:
+   - Request code review (via `requesting-code-review`)
+   - User implements feedback
+   - Re-request review (cycle += 1)
+   - Exit on: "ready" signal OR "no issues" OR cycle >= 5
+3. Update parent task: `review_status = "complete"`
 
 ### Stage 3: Branch Completion
 
-After all reviews are done, use the `finishing-a-development-branch` skill to present merge/PR options.
+After review complete:
+
+1. Invoke `finishing-a-development-branch` skill
+2. Present merge options (merge to main, create PR, keep, discard)
+3. User chooses integration path
 
 ## 10) Dynamic Task Monitoring via Cron
 

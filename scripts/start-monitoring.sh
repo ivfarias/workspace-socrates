@@ -6,6 +6,7 @@ WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CONFIG_PATH="$WORKSPACE_ROOT/.clawdbot/config.json"
 LOG_DIR="$WORKSPACE_ROOT/.clawdbot/logs"
 CHECK_SCRIPT="$SCRIPT_DIR/check-agents.sh"
+TRIGGER_PHASE9_SCRIPT="$SCRIPT_DIR/trigger-phase9.sh"
 
 usage() {
   cat <<'EOF'
@@ -55,6 +56,8 @@ monitor_log="$LOG_DIR/monitor.log"
 
 if [[ "$run_once" == "true" ]]; then
   "$CHECK_SCRIPT" | tee -a "$monitor_log"
+  # Phase 9: Trigger post-completion review workflow
+  "$TRIGGER_PHASE9_SCRIPT" | tee -a "$monitor_log"
   exit $?
 fi
 
@@ -66,6 +69,8 @@ while true; do
     echo
     echo "=== Monitor tick $(date '+%Y-%m-%d %H:%M:%S') ==="
     "$CHECK_SCRIPT"
+    # Phase 9: Trigger post-completion review workflow
+    "$TRIGGER_PHASE9_SCRIPT"
   } | tee -a "$monitor_log"
   sleep "$interval_seconds"
 done

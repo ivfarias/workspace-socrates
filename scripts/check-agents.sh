@@ -490,7 +490,12 @@ while IFS= read -r task; do
     "$done_expr" <<<"$task")"
 
   if [[ "$is_done" == "true" ]]; then
+    prev_status="$(jq -r '.status // "running"' <<<"$task")"
     task="$(jq --argjson ts "$current_ts" '.status = "done" | .completedAt = $ts' <<<"$task")"
+    # Phase 9: Mark as simplify_pending if transitioning to done (not already done)
+    if [[ "$prev_status" != "done" ]]; then
+      task="$(jq '.phase9_status = (.phase9_status // "simplify_pending")' <<<"$task")"
+    fi
     summary_done=$((summary_done + 1))
   else
     status="$(jq -r '.status // "running"' <<<"$task")"
