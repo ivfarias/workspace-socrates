@@ -105,7 +105,15 @@ Two thematic aliases remain active:
 
 All other previously documented aliases have been removed. Use canonical script names directly.
 
-## 2.8) Harness Patterns (Agent Reliability)
+## 2.8) Internal Scripts (not invoked directly)
+
+These scripts are called by canonical scripts — do not invoke them directly:
+
+- `run-agent.sh` — called by `spawn-agent.sh`; handles per-agent execution (Codex, Claude, Gemini)
+- `ci-pr-check.sh` — called by `check-agents.sh`; evaluates PR/CI signals for a given PR number
+- `ddg-search.sh` — DuckDuckGo web search utility; also accessible via `duckduckgo-search` skill
+
+## 2.9) Harness Patterns (Agent Reliability)
 
 These conventions are applied automatically when using `bootstrap-task.sh`. They implement the
 *Agent-Computer Interface* (ACI) patterns from the harness engineering research.
