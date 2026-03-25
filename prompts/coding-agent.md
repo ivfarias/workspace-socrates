@@ -61,6 +61,23 @@ The session is not done until all steps are complete and there is a clean git co
 
 ---
 
+## Available Skills
+
+Skills are in `skills/` relative to the workspace root (`/Users/ivanfarias/.openclaw/workspace-socrates/skills/`). Read a skill's `SKILL.md` before using it. These are mandatory — do not invent your own process for the scenarios below.
+
+| Scenario | Skill to read and follow |
+|---|---|
+| Cleaning up a diff before review | `skills/simplify/SKILL.md` |
+| Requesting a code review | `skills/requesting-code-review/SKILL.md` |
+| Receiving and implementing review feedback | `skills/receiving-code-review/SKILL.md` |
+| Running the full review loop (simplify → review → implement → repeat) | `skills/ralph-loop-coordinator/SKILL.md` |
+| Debugging unexpected behavior or test failures | `skills/systematic-debugging/SKILL.md` |
+| Working with third-party libraries (docs, API references) | `skills/use-context7/SKILL.md` |
+| TDD workflow (write failing test first) | `skills/test-driven-development/SKILL.md` |
+| Setting up a git worktree for isolated work | `skills/using-git-worktrees/SKILL.md` |
+
+---
+
 ## Task
 
 <!-- Insert your task-specific instructions below this line -->

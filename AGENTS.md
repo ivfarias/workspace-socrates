@@ -70,6 +70,17 @@ Before executing any workflow, announce which skill or script you are using and 
 
 This makes your decision-making transparent and auditable.
 
+## Ralph Gate (Non-Negotiable)
+
+**Run ralph as soon as the implementing agent says the work is done — before CI, before reviewers, before merge.**
+
+The trigger is the agent's completion claim, not the registry `done` status. When tmux shows the agent reporting completion:
+1. Spawn ralph immediately against the worktree
+2. Ralph cycles until clean
+3. Only after ralph exits clean → push + PR → CI + reviewers
+
+Do not wait for Phase 9 automation. Do not skip ralph because CI will catch it. Ralph runs first, always.
+
 ## Active Task Monitoring
 
 After spawning ANY agent task, you MUST set up cron-based monitoring using the cron tool:

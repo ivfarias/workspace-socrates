@@ -13,3 +13,8 @@ memory/*
 !memory/README.md
 
 tasks/prompts/
+.clawdbot/active-tasks.json
+.clawdbot/logs/*
+docs/plans/*
+.clawdbot/specs/*
+.env

@@ -296,7 +296,17 @@ Current task routing defaults in `.clawdbot/config.json`:
 
 This validates whether Codex/Claude/Gemini reviewer signals are present on a PR.
 
-## 9) Post-Completion Review Pipeline (Automated)
+## 9) Post-Completion Review Pipeline
+
+**Ralph runs first — before CI, before reviewers, before the PR is opened.**
+
+The trigger is the agent's completion claim visible in tmux, not the registry `done` status. As soon as an agent reports its work is complete:
+
+1. Spawn ralph against the worktree (see AGENTS.md §Ralph Gate)
+2. Ralph cycles until clean
+3. Only after ralph exits clean → push branch → open PR → CI + reviewer triad
+
+The automated Phase 9 pipeline below describes what happens after `status=done` in the registry, but ralph must not wait for that gate.
 
 When `check-agents.sh` detects a task has met all done criteria, Phase 9 automation triggers:
 
