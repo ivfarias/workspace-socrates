@@ -69,11 +69,18 @@ case "$agent" in
       "$prompt"
     ;;
   claude)
-    exec claude \
-      --model "$model" \
-      --permission-mode bypassPermissions \
-      --print \
-      "$prompt"
+    if [[ -n "$prompt_file" ]]; then
+      exec claude \
+        --model "$model" \
+        --permission-mode bypassPermissions \
+        --print \
+        < "$prompt_file"
+    else
+      echo "$prompt" | exec claude \
+        --model "$model" \
+        --permission-mode bypassPermissions \
+        --print
+    fi
     ;;
   gemini)
     exec gemini \
