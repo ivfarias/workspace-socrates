@@ -97,46 +97,23 @@ If you prefer the original skill name, use:
 /skill init-spec --repo /path/to/repo --name docs-sync
 ```
 
-## 2.7) Thematic Aliases (Optional)
+## 2.7) Active Aliases
 
-The orchestration layer supports Socratic naming aliases without changing core behavior.
-Plain commands remain canonical; aliases are wrappers.
+Two thematic aliases remain active:
+- `awaken-socrates` / `./scripts/awaken-socrates.sh` — thematic alias for install/bootstrap
+- `open-agora` / `/open_agora` — thematic alias for brainstorming entrypoint
 
-- Install/register Socrates:
-  - Plain: `./scripts/install-socrates.sh`
-  - Alias: `./scripts/awaken-socrates.sh`
-- Spawn one task:
-  - Plain: `./scripts/spawn-agent.sh`
-  - Alias: `./scripts/summon-interlocutor.sh`
-- Init + spawn in one step:
-  - Plain: `./scripts/bootstrap-task.sh`
-  - Alias: `./scripts/convene-council.sh`
-- Reviewer gate checks:
-  - Plain: `./scripts/verify-reviewers.sh`
-  - Alias: `./scripts/form-check.sh`
-- Brainstorming-first prompt/spec drafting:
-  - Plain: `/brainstorming_prompt_file`
-  - Alias: `/open_agora`
-- No-PR spec scaffold bootstrap:
-  - Plain: `./scripts/init-spec.sh`
-  - Alias: `./scripts/begin-inquiry.sh`
-- Deterministic registry decision gate:
-  - Plain: `./scripts/check-agents.sh --no-respawn`
-  - Alias: `./scripts/rule-of-reason.sh`
-- One-shot monitor status return:
-  - Plain: `./scripts/start-monitoring.sh --once`
-  - Alias: `./scripts/return-to-agora.sh`
-- PR reviewer triad gate:
-  - Plain: `./scripts/verify-reviewers.sh`
-  - Alias: `./scripts/form-check.sh`
+All other previously documented aliases have been removed. Use canonical script names directly.
 
-Compatibility rule:
-- Any new theme alias should only delegate to a canonical script.
-- Automation and docs should reference both names side-by-side.
-- Slash equivalents exist for chat mode:
-  - `/start_elenchus`, `/begin_inquiry`, `/rule_of_reason`, `/return_to_agora`, `/dialectic_check`
+## 2.8) Internal Scripts (not invoked directly)
 
-## 2.8) Harness Patterns (Agent Reliability)
+These scripts are called by canonical scripts — do not invoke them directly:
+
+- `run-agent.sh` — called by `spawn-agent.sh`; handles per-agent execution (Codex, Claude, Gemini)
+- `ci-pr-check.sh` — called by `check-agents.sh`; evaluates PR/CI signals for a given PR number
+- `ddg-search.sh` — DuckDuckGo web search utility; also accessible via `duckduckgo-search` skill
+
+## 2.9) Harness Patterns (Agent Reliability)
 
 These conventions are applied automatically when using `bootstrap-task.sh`. They implement the
 *Agent-Computer Interface* (ACI) patterns from the harness engineering research.

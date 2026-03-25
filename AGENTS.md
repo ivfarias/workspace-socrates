@@ -116,6 +116,16 @@ openclaw cron rm <job-id>
 
 **If you tell the user "I'll get back to you when it's done," you MUST have a cron watcher running.** Saying you'll follow up and then not having monitoring in place is a broken promise. The cron watcher IS the follow-up mechanism.
 
+## When Tooling Breaks
+
+**REQUIRED SUB-SKILL: Use systematic-debugging before ANY diagnosis attempt.**
+
+If `run-agent.sh`, `bootstrap-task.sh`, or any orchestration script fails:
+1. Read `skills/systematic-debugging/SKILL.md` — follow its process to identify root cause
+2. Report the root cause and exact error to the user
+3. Do NOT attempt to work around it (no wrapper scripts, no manual tmux, no direct agent invocations)
+4. Write a plan to fix the broken tool and spawn Codex — then stop and wait
+
 ## Memory
 
 You wake up fresh each session. These files are your continuity:

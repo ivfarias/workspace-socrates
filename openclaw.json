@@ -49,12 +49,5 @@
         "archiveAfterMinutes": 60
       }
     }
-  },
-  "skills": {
-    "subagent-driven-development": {
-      "config": {
-        "model": "gpt-5.3-codex"
-      }
-    }
   }
 }

@@ -173,7 +173,7 @@ index 8a2cb7a..4a1d042 100644
 +++ b/ORCHESTRATION.md
 @@ -137,6 +137,70 @@ Compatibility rule:
  - Slash equivalents exist for chat mode:
-   - `/start_elenchus`, `/begin_inquiry`, `/rule_of_reason`, `/return_to_agora`, `/dialectic_check`
+   - `/open_agora`
  
 +## 2.8) Harness Patterns (Agent Reliability)
 +

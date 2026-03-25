@@ -96,14 +96,12 @@ Then monitor:
 Detailed setup guide: [SETUP.md](SETUP.md)
 Guia rapido em Portugues (PT-BR): [QUICKSTART.pt-BR.md](QUICKSTART.pt-BR.md)
 
-## Thematic Commands
+## Active Aliases
 
 - Install/register agent: `./scripts/awaken-socrates.sh`
-- Spawn one task: `./scripts/summon-interlocutor.sh`
-- Init + spawn in one step: `./scripts/convene-council.sh`
-- Reviewer gate verification: `./scripts/form-check.sh`
+- Brainstorming entrypoint: `/open_agora`
 
-For complete command reference and thematic alias documentation, see **ORCHESTRATION.md § Thematic Aliases**.
+For complete command reference, see **ORCHESTRATION.md § Active Aliases**.
 
 
 ## Model Behavior
