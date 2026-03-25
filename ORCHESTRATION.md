@@ -119,7 +119,6 @@ Plain commands remain canonical; aliases are wrappers.
   - Alias: `/open_agora`
 - No-PR spec scaffold bootstrap:
   - Plain: `./scripts/init-spec.sh`
-  - Alias: `./scripts/start-elenchus.sh`
   - Alias: `./scripts/begin-inquiry.sh`
 - Deterministic registry decision gate:
   - Plain: `./scripts/check-agents.sh --no-respawn`
@@ -129,7 +128,7 @@ Plain commands remain canonical; aliases are wrappers.
   - Alias: `./scripts/return-to-agora.sh`
 - PR reviewer triad gate:
   - Plain: `./scripts/verify-reviewers.sh`
-  - Alias: `./scripts/dialectic-check.sh`
+  - Alias: `./scripts/form-check.sh`
 
 Compatibility rule:
 - Any new theme alias should only delegate to a canonical script.

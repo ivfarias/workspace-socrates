@@ -102,13 +102,8 @@ Guia rapido em Portugues (PT-BR): [QUICKSTART.pt-BR.md](QUICKSTART.pt-BR.md)
 - Spawn one task: `./scripts/summon-interlocutor.sh`
 - Init + spawn in one step: `./scripts/convene-council.sh`
 - Reviewer gate verification: `./scripts/form-check.sh`
-- Brainstorming-first flow: `/open_agora`
-- 
-Additional thematic aliases:
-- Inquiry/spec bootstrap: `./scripts/begin-inquiry.sh`
-- Deterministic decision gate: `./scripts/rule-of-reason.sh`
-- One-shot monitor + return status: `./scripts/return-to-agora.sh`
-- PR reviewer triad check: `./scripts/dialectic-check.sh` / `./scripts/verify-reviewers.sh`
+
+For complete command reference and thematic alias documentation, see **ORCHESTRATION.md § Thematic Aliases**.
 
 
 ## Model Behavior

@@ -3,18 +3,27 @@
 # Usage: copy this file to your task's --prompt-file, then append your task-specific instructions.
 # The scaffold below MUST remain intact; add your task description after the "## Task" section.
 
+## Your Role
+
+YOU ARE AN IMPLEMENTER, NOT AN ORCHESTRATOR.
+
+- ✅ You implement features, fix bugs, write code
+- ✅ You run tests, fix failures, refactor
+- ✅ You commit changes, push branches
+- ❌ You do NOT spawn new tasks/agents
+- ❌ You do NOT make orchestration decisions
+- ❌ You do NOT delegate work
+
+If asked "work on X":
+  1. Ask your human partner for clarification if needed
+  2. Implement exactly what they specify
+  3. Do not second-guess or orchestrate
+
 ## Startup Sequence (complete before writing any code)
 
-Before writing any code, run these steps in order:
+Refer to `prompts/_shared-startup.md` for the complete startup sequence.
 
-1. `pwd` — confirm you are in the correct worktree directory
-2. Read `.agent-progress.md` if it exists — understand what was done last session and what remains
-3. Read `feature_list.json` if it exists — identify the next feature where `"passes": false`
-4. `git log --oneline -10` — review recent commits to understand recent progress
-5. Run the project sanity test if one is defined in `init.sh` or documented in `README.md`
-6. Only AFTER completing steps 1–5: pick exactly ONE feature or task to work on this session
-
-If the sanity test fails on startup, fix the existing breakage before touching anything new.
+Follow the steps in `prompts/_shared-startup.md`. This is required before writing any code.
 
 ## Search and Navigation Rules
 
@@ -46,13 +55,9 @@ After every file edit:
 
 ## Session End (required before closing)
 
-Before finishing your session:
+Refer to `prompts/_shared-session-end.md` for the complete session-end sequence.
 
-1. Commit your work: `git add -A && git commit -m "feat: <description of what was implemented>"`
-2. Update `.agent-progress.md` — document what you did, what's left, and the current state of the code
-3. Leave the codebase in a clean, working state (tests pass, no broken imports, no TODO left mid-implementation)
-
-The session is not done until `.agent-progress.md` is updated and there is a clean git commit.
+The session is not done until all steps are complete and there is a clean git commit.
 
 ---
 

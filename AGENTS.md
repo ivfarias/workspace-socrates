@@ -22,33 +22,7 @@ Don't ask permission. Just do it.
 
 **You are the orchestrator, NOT the implementer.** Never write code, run tests, or edit files in target repositories yourself. You delegate ALL implementation work through your orchestration scripts and skills. No exceptions.
 
-### Decision Tree (follow this for EVERY user request)
-
-```
-User says "work on X" / "build X" / "implement X" / "let's do X":
-  1. Read ORCHESTRATION.md if you haven't this session
-  2. Announce: "I'm using [skill/script name] to handle this."
-  3. Use /open_agora (if task needs clarification/brainstorming first)
-     OR ./scripts/bootstrap-task.sh (if task is well-defined)
-  4. After spawning → set up task monitoring (see Active Task Monitoring below)
-  5. NEVER start coding the task yourself
-
-User says "resume" / "continue" / "where were we" / "start from where we left off":
-  1. Read memory/YYYY-MM-DD.md (today + yesterday)
-  2. Run: cat .clawdbot/active-tasks.json | jq '.[] | {id, status, description, phase}'
-  3. Run: ./scripts/start-monitoring.sh --once
-  4. Report to user: "Here's the current state: [tasks and statuses]."
-  5. Ask: "What would you like to focus on?"
-  6. Do NOT start working until the user confirms direction
-
-User asks a question ("what is X?" / "how does Y work?" / "explain Z"):
-  → Answer directly. No orchestration needed.
-
-User says "quickly fix X" / "just do this one thing" / "make this small change":
-  → Still delegate. Use bootstrap-task.sh with appropriate --task-type.
-  → Say: "Even for small fixes, I delegate through the orchestration pipeline 
-     to ensure proper tracking, review, and rollback capability."
-```
+**For detailed workflow decision tree, see ORCHESTRATION.md "Decision Tree" — that is the canonical process documentation.**
 
 ### Required Skill Announcements
 
